@@ -543,6 +543,20 @@ func InitialSyncDocumentSettings(db *gorm.DB) {
 			ResetPeriod: "Tahunan",
 		},
 		{
+			Modul:       "Medis",
+			JenisSurat:  "Pendaftaran Medis",
+			FormatNomor: "{{nomor}}/DAFTAR-MEDIS/{{bulan_romawi}}/{{tahun}}",
+			LastNumber:  0,
+			ResetPeriod: "Tahunan",
+		},
+		{
+			Modul:       "Medis",
+			JenisSurat:  "Laporan Rekap Pasien",
+			FormatNomor: "{{nomor}}/LAP-KLINIK/{{bulan_romawi}}/{{tahun}}",
+			LastNumber:  0,
+			ResetPeriod: "Tahunan",
+		},
+		{
 			Modul:       "Psikolog",
 			JenisSurat:  "Rujukan Psikolog",
 			FormatNomor: "{{nomor}}/RUJ-PSIKOLOG/{{bulan_romawi}}/{{tahun}}",
@@ -607,8 +621,14 @@ func InitialSyncDocumentSettings(db *gorm.DB) {
 		},
 	}
 
-	// Cleanup dormant/fake settings from DB
-	db.Where("jenis_surat IN ?", []string{"Persetujuan LPJ", "Keterangan Mahasiswa Aktif", "Transkrip Prestasi"}).Delete(&models.DocumentSetting{})
+	// Clean up old document settings that are no longer used
+	db.Where("jenis_surat IN ?", []string{
+		"Persetujuan LPJ",
+		"Keterangan Mahasiswa Aktif",
+		"Transkrip Prestasi",
+		"Persetujuan Proposal",
+		"Laporan Realisasi Beasiswa",
+	}).Delete(&models.DocumentSetting{})
 	for _, doc := range defaults {
 		var existing models.DocumentSetting
 		if err := db.Where("jenis_surat = ?", doc.JenisSurat).First(&existing).Error; err != nil {

@@ -427,3 +427,22 @@ input[type="color"]::-webkit-color-swatch {
   margin-right: 8px !important;
   width: 200px !important;
 }
+
+@media print {
+  /* Sembunyikan sidebar dan topbar saat di-print */
+  aside, nav, .print-hidden, [class*="PortalSidebar"], [class*="PortalTopbar"] {
+    display: none !important;
+  }
+  
+  /* Buat konten utama menggunakan 100% lebar kertas */
+  main, .page-content, [class*="PageContent"] {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Hindari pemotongan elemen di tengah-tengah chart saat page break */
+  .recharts-wrapper {
+    page-break-inside: avoid;
+  }
+}

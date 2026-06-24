@@ -109,9 +109,9 @@ export default function NotificationDropdown() {
             if (typeLower === 'konseling' || typeLower === 'booking' || typeLower === 'reschedule') {
               defaultLink = '/admin/psychologists/dashboard';
             } else if (typeLower === 'referral') {
-              defaultLink = '/admin/psychologists/referrals';
+              defaultLink = '/app/psikologi/referrals';
             } else if (typeLower === 'referral_medis') {
-              defaultLink = '/admin/tenagakes/referrals';
+              defaultLink = '/app/kesehatan/referrals';
             } else if (typeLower === 'beasiswa') {
               defaultLink = '/admin/scholarships';
             } else if (typeLower === 'achievement' || typeLower === 'prestasi') {
@@ -129,17 +129,19 @@ export default function NotificationDropdown() {
             }
           } else if (isPsychologist) {
             if (typeLower === 'booking' || typeLower === 'reschedule') {
-              defaultLink = '/psychologist/bookings';
+              defaultLink = '/app/psikologi/bookings';
+            } else if (typeLower === 'referral') {
+              defaultLink = '/app/psikologi/referrals';
             } else {
-              defaultLink = '/psychologist/notifications';
+              defaultLink = '/app/psikologi/notifications';
             }
           } else if (isOrmawa) {
             defaultLink = '/ormawa/notifikasi';
           } else if (isTenagaKesehatan) {
             if (typeLower === 'referral_medis' || lowerText.includes('rujukan')) {
-              defaultLink = '/tenagakes/referrals';
+              defaultLink = '/app/kesehatan/referrals';
             } else {
-              defaultLink = '/tenagakes/notifications';
+              defaultLink = '/app/kesehatan/notifications';
             }
           } else if (isKencanaAdmin) {
             defaultLink = '/kencana-admin/notifications';

@@ -17,12 +17,15 @@ export default function BookingManagement() {
   const { hasPermission } = usePermission();
   const canManageBookings = hasPermission('health.bookings.update') || hasPermission('health.bookings');
   
+  // Tabs: 'live', 'requests', 'history'
+  const [activeTab, setActiveTab] = useState('live');
+
   // Reject Modal State
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectingBookingId, setRejectingBookingId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  // Date Filters for Hero Actions
+  // Date Filters for History Tab
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -34,7 +37,7 @@ export default function BookingManagement() {
         setError('');
       })
       .catch((err) => {
-        setError(err.message || 'Gagal memuat data booking.');
+        setError(err.message || 'Gagal memuat data antrean.');
       })
       .finally(() => {
         setLoading(false);
@@ -45,7 +48,6 @@ export default function BookingManagement() {
     loadData();
   }, []);
 
-  // Standardize backend status string
   const getNormalizedStatus = (statusStr) => {
     if (!statusStr) return 'Menunggu';
     if (statusStr === 'Menunggu Konfirmasi') return 'Menunggu';
@@ -59,26 +61,27 @@ export default function BookingManagement() {
     'Ditolak': { bg: 'color-mix(in srgb, var(--theme-error) 10%, transparent)', text: 'var(--theme-error)', border: 'color-mix(in srgb, var(--theme-error) 20%, transparent)', dot: 'var(--theme-error)' },
   };
 
-  const facultyOptions = useMemo(() => Array.from(new Set(bookings.map(b => b.faculty).filter(Boolean))), [bookings]);
-  const serviceOptions = useMemo(() => Array.from(new Set(bookings.map(b => b.tipe_layanan).filter(Boolean))), [bookings]);
+  // Groupings
+  const todayStr = new Date().toISOString().split('T')[0];
 
-  const filteredByDate = useMemo(() => {
+  const liveQueue = useMemo(() => {
+    return bookings.filter(b => getNormalizedStatus(b.status) === 'Dikonfirmasi' && b.raw_date === todayStr);
+  }, [bookings, todayStr]);
+
+  const pendingRequests = useMemo(() => {
+    return bookings.filter(b => getNormalizedStatus(b.status) === 'Menunggu');
+  }, [bookings]);
+
+  const historyQueue = useMemo(() => {
     return bookings.filter(b => {
+      const s = getNormalizedStatus(b.status);
+      if (s === 'Menunggu' || (s === 'Dikonfirmasi' && b.raw_date === todayStr)) return false;
       const bDate = b.raw_date || '';
       const matchStart = !startDate || (bDate >= startDate);
       const matchEnd = !endDate || (bDate <= endDate);
       return matchStart && matchEnd;
     });
-  }, [bookings, startDate, endDate]);
-
-  const statusCounts = useMemo(() => {
-    const counts = { 'Menunggu': 0, 'Dikonfirmasi': 0, 'Selesai': 0, 'Ditolak': 0 };
-    filteredByDate.forEach(b => {
-      const s = getNormalizedStatus(b.status);
-      if (counts[s] !== undefined) counts[s]++;
-    });
-    return counts;
-  }, [filteredByDate]);
+  }, [bookings, startDate, endDate, todayStr]);
 
   const handleTableSearch = (data, searchVal) => {
     const query = searchVal.trim().toLowerCase();
@@ -98,7 +101,7 @@ export default function BookingManagement() {
       setRejectingBookingId(null);
       setRejectionReason('');
     } catch (err) {
-      alert(err.message || 'Gagal mengubah status booking.');
+      alert(err.message || 'Gagal mengubah status antrean.');
     } finally {
       setUpdatingId(null);
     }
@@ -116,6 +119,15 @@ export default function BookingManagement() {
       return;
     }
     handleAction(rejectingBookingId, 'Ditolak', rejectionReason);
+  };
+
+  const startLiveExamination = (bookingId, patientId, jenisPendaftaran) => {
+    // Navigasi ke halaman sesuai dengan tipe pendaftaran
+      if (jenisPendaftaran === 'Offline') {
+        navigate(`/app/kesehatan/examination?booking_id=${bookingId}&patient_id=${patientId}`);
+      } else {
+        navigate(`/app/kesehatan/emr?booking_id=${bookingId}&patient_id=${patientId}`);
+      }
   };
 
   const columns = [
@@ -166,7 +178,7 @@ export default function BookingManagement() {
       render: (v, row) => (
         <div className="max-w-[200px]">
           <p className="text-xs font-medium text-[var(--theme-text)] line-clamp-2 leading-snug">
-            {row.note ? `"${row.note}"` : <span className="italic text-[var(--theme-text-subtle)]">Tidak ada catatan keluhan.</span>}
+            {row.note ? `"${row.note}"` : <span className="italic text-[var(--theme-text-subtle)]">Tidak ada catatan.</span>}
           </p>
           {row.alasan_penolakan && (
             <p className="mt-1.5 text-[10px] font-bold text-[var(--theme-error)] flex items-center gap-1 line-clamp-2">
@@ -225,10 +237,10 @@ export default function BookingManagement() {
 
             {normalized === 'Dikonfirmasi' && canManageBookings && (
               <button
-                onClick={() => navigate(`/app/kesehatan/patients/${row.mahasiswa_id}/medical-record?booking_id=${row.id}`)}
-                className="h-8 px-3 flex items-center justify-center gap-1.5 rounded-lg bg-[var(--theme-primary)] hover:opacity-90 text-white text-[10px] font-bold uppercase tracking-wider shadow-sm transition-all"
+                onClick={() => startLiveExamination(row.id, row.mahasiswa_id, row.jenis_pendaftaran)}
+                className="h-8 px-3 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider shadow-sm transition-all"
               >
-                <span className="material-symbols-outlined text-[14px]">medical_services</span> Mulai Sesi
+                <span className="material-symbols-outlined text-[14px]">monitor_heart</span> Periksa
               </button>
             )}
 
@@ -252,111 +264,175 @@ export default function BookingManagement() {
     }
   ];
 
-  const HeaderActions = (
-    <div className="flex flex-col sm:flex-row gap-3 items-end">
-      <div className="flex flex-col gap-1.5 w-full sm:w-auto">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)] pl-1">Dari Tanggal</label>
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          className="h-10 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm font-semibold text-[var(--theme-text)] outline-none transition-all focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10"
-        />
-      </div>
-      <div className="flex flex-col gap-1.5 w-full sm:w-auto">
-        <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)] pl-1">Sampai Tanggal</label>
-        <input
-          type="date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          className="h-10 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm font-semibold text-[var(--theme-text)] outline-none transition-all focus:border-[var(--theme-primary)] focus:ring-2 focus:ring-[var(--theme-primary)]/10"
-        />
-      </div>
-    </div>
-  );
-
   return (
     <div className="w-full relative space-y-6 scroll-smooth">
       <DashboardHero
-        title="Janji Temu"
-        highlightedTitle="Medis"
-        subtitle="Kelola pendaftaran booking online mahasiswa untuk pemeriksaan umum dan konsultasi kesehatan."
-        icon="calendar_month"
-        badges={[{ label: 'Layanan Kesehatan', active: true }]}
-        actions={HeaderActions}
+        title="Antrean Klinik"
+        highlightedTitle="Hari Ini"
+        subtitle="Kelola antrean berjalan, tinjau permohonan janji temu masuk, dan lihat riwayat antrean klinik."
+        icon="recent_patient"
+        badges={[{ label: 'Live Queue', active: activeTab === 'live' }, { label: 'Permintaan Baru', active: activeTab === 'requests' }]}
       />
 
-      {/* Statistics Top Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-        <PrimaryStatsCard
-          title="Menunggu"
-          value={`${statusCounts['Menunggu']} Antrean`}
-          icon="pending_actions"
-          colorTheme="warning"
-          badgeText="PERLU TINDAKAN"
-        />
-        <PrimaryStatsCard
-          title="Dikonfirmasi"
-          value={`${statusCounts['Dikonfirmasi']} Sesi`}
-          icon="event_available"
-          colorTheme="info"
-          badgeText="AKAN DATANG"
-        />
-        <PrimaryStatsCard
-          title="Selesai"
-          value={`${statusCounts['Selesai']} Sesi`}
-          icon="check_circle"
-          colorTheme="success"
-          badgeText="HARI INI"
-        />
-        <PrimaryStatsCard
-          title="Ditolak"
-          value={`${statusCounts['Ditolak']} Antrean`}
-          icon="cancel"
-          colorTheme="error"
-          badgeText="DIBATALKAN"
-        />
+      {/* Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-2 border-b border-[var(--theme-border)]">
+        <button
+          onClick={() => setActiveTab('live')}
+          className={`flex flex-col items-start gap-1 px-5 py-3 rounded-t-xl transition-all border-b-2 ${activeTab === 'live' ? 'border-[var(--theme-primary)] text-[var(--theme-primary)] bg-[var(--theme-primary-light)]/5' : 'border-transparent text-[var(--theme-text-muted)] hover:bg-[var(--theme-surface)] hover:text-[var(--theme-text)]'}`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-xl">monitor_heart</span>
+            <span className="font-bold text-sm tracking-wide">Antrean Hari Ini</span>
+            {liveQueue.length > 0 && (
+              <span className="ml-1 px-2 py-0.5 rounded-md bg-[var(--theme-primary)] text-white text-[10px] font-black">{liveQueue.length}</span>
+            )}
+          </div>
+          <span className="text-[10px] opacity-80 uppercase tracking-widest">Siap Dipanggil</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('requests')}
+          className={`flex flex-col items-start gap-1 px-5 py-3 rounded-t-xl transition-all border-b-2 ${activeTab === 'requests' ? 'border-amber-500 text-amber-600 bg-amber-500/5' : 'border-transparent text-[var(--theme-text-muted)] hover:bg-[var(--theme-surface)] hover:text-[var(--theme-text)]'}`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-xl">pending_actions</span>
+            <span className="font-bold text-sm tracking-wide">Permintaan Baru</span>
+            {pendingRequests.length > 0 && (
+              <span className="ml-1 px-2 py-0.5 rounded-md bg-amber-500 text-white text-[10px] font-black">{pendingRequests.length}</span>
+            )}
+          </div>
+          <span className="text-[10px] opacity-80 uppercase tracking-widest">Perlu Konfirmasi</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`flex flex-col items-start gap-1 px-5 py-3 rounded-t-xl transition-all border-b-2 ${activeTab === 'history' ? 'border-[var(--theme-text)] text-[var(--theme-text)] bg-[var(--theme-surface)]' : 'border-transparent text-[var(--theme-text-muted)] hover:bg-[var(--theme-surface)] hover:text-[var(--theme-text)]'}`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-xl">history</span>
+            <span className="font-bold text-sm tracking-wide">Riwayat Antrean</span>
+          </div>
+          <span className="text-[10px] opacity-80 uppercase tracking-widest">Selesai & Ditolak</span>
+        </button>
       </div>
 
-      <div className="w-full">
+      {activeTab === 'live' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black uppercase tracking-widest text-[var(--theme-text)]">Pasien Menunggu Dipanggil</h3>
+            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black tracking-widest border border-emerald-500/20 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              LIVE QUEUE
+            </span>
+          </div>
+          
+          {loading ? (
+            <div className="h-40 flex items-center justify-center text-[var(--theme-text-muted)]">Memuat antrean...</div>
+          ) : liveQueue.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 bg-[var(--theme-surface)] border border-[var(--theme-border)] border-dashed rounded-2xl gap-3">
+              <span className="material-symbols-outlined text-5xl text-[var(--theme-text-subtle)]">event_available</span>
+              <p className="text-sm font-bold text-[var(--theme-text-muted)]">Tidak ada pasien dalam antrean hari ini.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {liveQueue.map((queueItem, idx) => (
+                <div key={queueItem.id} className="bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-3">
+                    <span className="text-[10px] font-black text-[var(--theme-primary)] bg-[var(--theme-primary-light)]/10 px-2 py-1 rounded-lg uppercase tracking-wider">
+                      {queueItem.time}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="size-12 rounded-full bg-[var(--theme-surface)] text-[var(--theme-primary)] flex items-center justify-center font-black text-lg border border-[var(--theme-border)]">
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-[var(--theme-text)] text-sm line-clamp-1">{queueItem.name}</h4>
+                      <p className="text-[11px] font-medium text-[var(--theme-text-muted)] mt-0.5">{queueItem.nim}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 mb-5 bg-[var(--theme-surface)] p-3 rounded-xl border border-[var(--theme-border)]">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[14px] text-[var(--theme-text-muted)]">stethoscope</span>
+                      <span className="text-xs font-bold text-[var(--theme-text)]">{queueItem.tipe_layanan}</span>
+                    </div>
+                    {queueItem.note && (
+                      <div className="flex items-start gap-2">
+                        <span className="material-symbols-outlined text-[14px] text-[var(--theme-text-muted)] mt-0.5">assignment</span>
+                        <span className="text-[11px] font-medium text-[var(--theme-text-muted)] line-clamp-2 leading-snug">"{queueItem.note}"</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button 
+                    onClick={() => startLiveExamination(queueItem.id, queueItem.mahasiswa_id, queueItem.jenis_pendaftaran)}
+                    className="w-full h-10 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm"
+                  >
+                    <span className="material-symbols-outlined text-sm">campaign</span>
+                    Panggil & Periksa
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'requests' && (
         <DataTable
-          title="Daftar Pengajuan Masuk"
-          subtitle={`Menampilkan ${filteredByDate.length} riwayat antrean berdasarkan filter tanggal`}
+          title="Permintaan Janji Temu"
+          subtitle="Mahasiswa yang menunggu konfirmasi jadwal klinik"
           columns={columns}
-          data={filteredByDate.map(b => ({ ...b, status: getNormalizedStatus(b.status) }))} // normalize status for filtering
+          data={pendingRequests}
           loading={loading}
           searchable={true}
           onSearch={handleTableSearch}
-          searchPlaceholder="Cari nama, NIM, atau keluhan..."
-          pagination={true}
-          pageSize={10}
-          emptyMessage="Tidak ada antrean. Coba sesuaikan rentang tanggal atau kata kunci pencarian."
-          emptyIcon="event_busy"
-          filters={[
-            {
-              key: 'status',
-              placeholder: 'Semua Status',
-              options: [
-                { label: 'Menunggu', value: 'Menunggu' },
-                { label: 'Dikonfirmasi', value: 'Dikonfirmasi' },
-                { label: 'Selesai', value: 'Selesai' },
-                { label: 'Ditolak', value: 'Ditolak' }
-              ]
-            },
-            {
-              key: 'tipe_layanan',
-              placeholder: 'Semua Layanan',
-              options: serviceOptions.map(s => ({ label: s, value: s }))
-            },
-            {
-              key: 'faculty',
-              placeholder: 'Semua Fakultas',
-              options: facultyOptions.map(f => ({ label: f, value: f }))
-            }
-          ]}
+          searchPlaceholder="Cari permintaan..."
+          emptyMessage="Tidak ada permintaan janji temu yang perlu dikonfirmasi."
+          emptyIcon="inbox"
         />
-      </div>
+      )}
 
+      {activeTab === 'history' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-end">
+            <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)] pl-1">Dari Tanggal</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-10 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm font-semibold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)] pl-1">Sampai Tanggal</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-10 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm font-semibold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]"
+              />
+            </div>
+          </div>
+          <DataTable
+            title="Riwayat Antrean"
+            subtitle="Data antrean yang sudah selesai atau ditolak"
+            columns={columns}
+            data={historyQueue}
+            loading={loading}
+            searchable={true}
+            onSearch={handleTableSearch}
+            searchPlaceholder="Cari histori pasien..."
+            pagination={true}
+            pageSize={10}
+            emptyMessage="Tidak ada histori pada rentang tanggal ini."
+            emptyIcon="history"
+          />
+        </div>
+      )}
+
+      {/* Tolak Modal */}
       <DialogModal
         isOpen={showRejectModal}
         onClose={() => { setShowRejectModal(false); setRejectingBookingId(null); }}
@@ -367,16 +443,16 @@ export default function BookingManagement() {
       >
         <div className="space-y-4">
           <p className="text-[11px] font-medium text-[var(--theme-text-muted)]">
-            Harap berikan alasan penolakan agar mahasiswa mengetahui kendala jadwal atau layanan.
+            Harap berikan alasan penolakan agar pasien mengetahui kendala jadwal atau layanan.
           </p>
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] font-headline">Alasan Penolakan</label>
             <textarea
-              placeholder="Misal: Petugas sedang ada agenda kedinasan..."
+              placeholder="Misal: Dokter sedang ada agenda operasi..."
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               rows={4}
-              className="w-full rounded-xl border border-[var(--theme-border)] p-3 text-[11px] font-medium text-[var(--theme-text)] outline-none transition-all placeholder:text-[var(--theme-text-subtle)] focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary-light)]/20 bg-[var(--theme-bg)] resize-none"
+              className="w-full rounded-xl border border-[var(--theme-border)] p-3 text-[11px] font-medium text-[var(--theme-text)] outline-none bg-[var(--theme-bg)] resize-none"
             />
           </div>
           <div className="flex gap-3 pt-2">
@@ -390,7 +466,7 @@ export default function BookingManagement() {
             <button
               type="button"
               onClick={handleRejectConfirm}
-              className="flex-1 py-2.5 rounded-xl bg-[var(--theme-error)] hover:opacity-90 text-white text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-1"
+              className="flex-1 py-2.5 rounded-xl bg-[var(--theme-error)] hover:opacity-90 text-white text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1"
             >
               <span className="material-symbols-outlined text-[14px]">close</span> Tolak Booking
             </button>

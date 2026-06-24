@@ -1199,7 +1199,7 @@ func CreateRujukan(c *fiber.Ctx) error {
 						"Tenaga Kesehatan telah mengajukan surat rujukan medis untuk mahasiswa %s. Harap tinjau dan berikan persetujuan di portal admin.",
 						rujukan.Mahasiswa.Nama,
 					),
-					Link: "/admin/tenagakes/referrals",
+					Link: "",
 				})
 			}
 		}
@@ -1228,7 +1228,7 @@ func CreateRujukan(c *fiber.Ctx) error {
 					"Surat rujukan medis untuk %s berhasil diajukan dan sedang menunggu persetujuan Kemahasiswaan.",
 					rujukan.Mahasiswa.Nama,
 				),
-				Link: "/tenagakes/referrals",
+				Link: "",
 			})
 		}
 	}()

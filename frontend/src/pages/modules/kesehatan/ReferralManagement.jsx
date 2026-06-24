@@ -8,9 +8,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { DialogModal } from '@/components/ui/DialogModal'
 import { toast, Toaster } from 'react-hot-toast'
 import { cn } from '@/lib/utils'
-import { rujukanService, API_BASE_URL, fetchBlobWithAuth } from '@/services/api'
+import { rujukanService, API_BASE_URL, fetchBlobWithAuth, adminService } from '@/services/api'
+import { FileDown, RefreshCw } from 'lucide-react'
+import { usePermission } from '@/hooks/usePermission'
+import useAuthStore from '@/store/useAuthStore'
 import { PageContent, PageCard } from '@/components/ui/page'
 import { DashboardHero } from '@/components/ui/dashboard'
+import AdminTenagaKesehatanReferrals from './AdminTenagaKesehatanReferrals'
 
 const getCleanImageUrl = (url) => {
     if (!url) return ''
@@ -42,6 +46,14 @@ const getInitials = (name = '') => {
 }
 
 export default function ReferralManagement() {
+    const user = useAuthStore(state => state.user);
+    const roleStr = user?.role ? user.role.toLowerCase() : '';
+    const isSuperAdmin = roleStr.includes('super') && roleStr.includes('admin');
+
+    if (isSuperAdmin) {
+        return <AdminTenagaKesehatanReferrals />
+    }
+
     const [referrals, setReferrals] = useState([])
     const [loading, setLoading] = useState(true)
     const [isDetailOpen, setIsDetailOpen] = useState(false)
@@ -72,6 +84,28 @@ export default function ReferralManagement() {
             toast.error('Gagal mengunduh surat rujukan')
         } finally {
             setExportingId(null)
+        }
+    }
+
+    const handleApprovalSubmit = async () => {
+        if (!approvalModal.item || !approvalModal.action) return
+        setApproving(true)
+        try {
+            const res = await adminService.approveTenagaKesehatanReferral(approvalModal.item.id, approvalModal.action, approvalNote)
+            if (res.status === 'success') {
+                toast.success(`Rujukan berhasil ${approvalModal.action === 'approve' ? 'disetujui' : 'ditolak'}`)
+                setApprovalModal({ open: false, item: null, action: null })
+                setApprovalNote('')
+                if (comingFromDetail) setIsDetailOpen(false)
+                fetchData()
+            } else {
+                toast.error(res.message || 'Gagal memproses persetujuan')
+            }
+        } catch (err) {
+            console.error(err)
+            toast.error('Koneksi terputus')
+        } finally {
+            setApproving(false)
         }
     }
 
@@ -250,7 +284,86 @@ export default function ReferralManagement() {
                 </div>
             </div>
 
-            {/* Approval Confirmation Modal removed */}
+            {/* Approval Confirmation Modal */}
+            <Dialog open={approvalModal.open} onOpenChange={(open) => {
+                if (!open) {
+                    setApprovalModal({ open: false, item: null, action: null })
+                    setApprovalNote('')
+                }
+            }}>
+                <DialogContent className="max-w-md font-jakarta p-0 overflow-hidden border-none rounded-2xl bg-[var(--theme-surface)] shadow-2xl">
+                    <div className="p-6">
+                        <DialogHeader className="mb-6 space-y-3">
+                            <div className={cn(
+                                "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border mx-auto shadow-sm",
+                                approvalModal.action === 'approve'
+                                    ? "bg-[var(--theme-success-light)] border-[var(--theme-success)]/20 text-[var(--theme-success)]"
+                                    : "bg-[var(--theme-error-light)] border-[var(--theme-error)]/20 text-[var(--theme-error)]"
+                            )}>
+                                <span className="material-symbols-outlined text-[28px]">
+                                    {approvalModal.action === 'approve' ? 'check_circle' : 'cancel'}
+                                </span>
+                            </div>
+                            <div className="text-center">
+                                <DialogTitle className="text-xl font-bold text-[var(--theme-text)]">
+                                    Konfirmasi {approvalModal.action === 'approve' ? 'Persetujuan' : 'Penolakan'}
+                                </DialogTitle>
+                                <DialogDescription className="text-sm font-semibold text-[var(--theme-text-muted)] mt-2">
+                                    Anda akan {approvalModal.action === 'approve' ? 'menyetujui' : 'menolak'} surat rujukan untuk mahasiswa <strong>{approvalModal.item?.mahasiswa?.Nama || approvalModal.item?.Mahasiswa?.nama}</strong>.
+                                </DialogDescription>
+                            </div>
+                        </DialogHeader>
+
+                        {approvalModal.action === 'reject' && (
+                            <div className="space-y-2 mb-6">
+                                <label className="text-xs font-bold text-[var(--theme-text-subtle)] uppercase tracking-wider ml-1">Catatan Penolakan</label>
+                                <textarea
+                                    className="w-full p-4 text-sm bg-[var(--theme-bg)] border border-[var(--theme-border)] text-[var(--theme-text)] rounded-xl focus:ring-2 focus:ring-[var(--theme-error)] focus:border-transparent outline-none transition-all placeholder:text-[var(--theme-text-muted)]/50 font-medium resize-none shadow-inner"
+                                    rows={4}
+                                    placeholder="Tulis alasan penolakan untuk Tenaga Kesehatan..."
+                                    value={approvalNote}
+                                    onChange={(e) => setApprovalNote(e.target.value)}
+                                />
+                            </div>
+                        )}
+
+                        <DialogFooter className="flex-col sm:flex-row gap-3 pt-6 border-t border-[var(--theme-border-muted)] mt-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setApprovalModal({ open: false, item: null, action: null })}
+                                className="h-12 rounded-xl flex-1 text-sm font-bold border border-[var(--theme-border)] hover:bg-[var(--theme-bg)] text-[var(--theme-text)] shadow-sm"
+                                disabled={approving}
+                            >
+                                Batal
+                            </Button>
+                            <Button
+                                onClick={handleApprovalSubmit}
+                                className={cn(
+                                    "h-12 rounded-xl flex-1 text-sm font-bold border-none text-white shadow-md active:scale-95 transition-all flex items-center justify-center gap-2",
+                                    approvalModal.action === 'approve'
+                                        ? "bg-[var(--theme-success)] hover:bg-emerald-600 shadow-[var(--theme-success)]/20"
+                                        : "bg-[var(--theme-error)] hover:bg-rose-600 shadow-[var(--theme-error)]/20"
+                                )}
+                                disabled={approving || (approvalModal.action === 'reject' && !approvalNote.trim())}
+                            >
+                                {approving ? (
+                                    <>
+                                        <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
+                                        Memproses...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined text-[18px]">
+                                            {approvalModal.action === 'approve' ? 'check' : 'close'}
+                                        </span>
+                                        Konfirmasi
+                                    </>
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* ── Detail Modal ─────────────────────────────────────────── */}
             <DialogModal
@@ -391,7 +504,34 @@ export default function ReferralManagement() {
                                     </div>
                                 </div>
 
-                                {/* Tindakan Admin removed for tenagakes */}
+                                {/* Tindakan Admin */}
+                                {isSuperAdmin && (appStatus === 'menunggu_approval' || appStatus === 'pending') && (
+                                    <div className="pt-6 border-t border-[var(--theme-border-muted)]">
+                                        <h4 className="text-[10px] font-bold text-[var(--theme-text-subtle)] uppercase tracking-widest mb-4">Tindakan Admin</h4>
+                                        <div className="flex gap-3">
+                                            <Button
+                                                onClick={() => {
+                                                    setComingFromDetail(true)
+                                                    setApprovalModal({ open: true, item: detailItem, action: 'approve' })
+                                                }}
+                                                className="flex-1 h-11 bg-[var(--theme-success-light)] hover:bg-[var(--theme-success)] text-[var(--theme-success)] hover:text-white rounded-xl font-bold transition-all border border-[var(--theme-success)]/20 shadow-sm flex items-center justify-center gap-2"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                                                Setujui
+                                            </Button>
+                                            <Button
+                                                onClick={() => {
+                                                    setComingFromDetail(true)
+                                                    setApprovalModal({ open: true, item: detailItem, action: 'reject' })
+                                                }}
+                                                className="flex-1 h-11 bg-[var(--theme-error-light)] hover:bg-[var(--theme-error)] text-[var(--theme-error)] hover:text-white rounded-xl font-bold transition-all border border-[var(--theme-error)]/20 shadow-sm flex items-center justify-center gap-2"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">cancel</span>
+                                                Tolak
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )
                     })()}

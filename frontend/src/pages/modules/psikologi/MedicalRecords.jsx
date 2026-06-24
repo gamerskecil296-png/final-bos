@@ -4,12 +4,15 @@ import { DashboardHero } from '@/components/ui/dashboard';
 import { DataTable } from '@/components/ui/DataTable';
 import { PrimaryStatsCard } from '@/components/ui/StatsCard';
 import { DialogModal } from '@/components/ui/DialogModal';
+import DateRangeExportModal from '@/components/ui/DateRangeExportModal';
+import toast from 'react-hot-toast';
 
 // Icons
 const NoteIcon = ({ size, className, ...props }) => <span className={`material-symbols-outlined ${className || ''}`} style={{ fontSize: size || 24, ...props.style }} {...props}>edit_document</span>;
 const CheckIcon = ({ size, className, ...props }) => <span className={`material-symbols-outlined ${className || ''}`} style={{ fontSize: size || 24, ...props.style }} {...props}>task_alt</span>;
 const WarningIcon = ({ size, className, ...props }) => <span className={`material-symbols-outlined ${className || ''}`} style={{ fontSize: size || 24, ...props.style }} {...props}>error</span>;
 const HeartIcon = ({ size, className, ...props }) => <span className={`material-symbols-outlined ${className || ''}`} style={{ fontSize: size || 24, ...props.style }} {...props}>favorite</span>;
+const DownloadIcon = ({ size, className, ...props }) => <span className={`material-symbols-outlined ${className || ''}`} style={{ fontSize: size || 24, ...props.style }} {...props}>download</span>;
 
 export default function MedicalRecords() {
   const [medicalRecords, setMedicalRecords] = useState([]);
@@ -24,6 +27,12 @@ export default function MedicalRecords() {
   // Detail Modal State
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailItem, setDetailItem] = useState(null);
+
+  // Export Modal State
+  const [exportModalConfig, setExportModalConfig] = useState({
+    isOpen: false,
+    title: 'Export Rekapan Rekam Medis'
+  });
   useEffect(() => {
     let ignore = false;
     loadMedicalRecords();
@@ -272,10 +281,31 @@ export default function MedicalRecords() {
             ))}
           </select>
           <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[var(--theme-text-muted)] pointer-events-none">expand_more</span>
+          </div>
         </div>
+        <button
+          onClick={() => setExportModalConfig({ isOpen: true, title: 'Export Rekapan Rekam Medis' })}
+          className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[var(--theme-primary)] text-white shadow-sm flex items-center gap-2 hover:bg-[var(--theme-primary-hover)] transition-all ml-auto sm:ml-2"
+        >
+          <DownloadIcon size={16} /> Export Rekapan
+        </button>
       </div>
-    </div>
-  );
+    );
+
+  const handleExport = async ({ startDate, endDate }) => {
+    try {
+      await psychologistService.downloadRecapMedicalRecordPDF({ 
+        fakultas: selectedFakultas, 
+        prodi: selectedProdi,
+        start_date: startDate,
+        end_date: endDate
+      });
+      toast.success('Berhasil mengunduh rekapan');
+      setExportModalConfig({ ...exportModalConfig, isOpen: false });
+    } catch (err) {
+      toast.error(err.message || 'Gagal mengunduh rekapan');
+    }
+  };
 
   return (
     <>
@@ -499,6 +529,15 @@ export default function MedicalRecords() {
           </div>
         )}
       </DialogModal>
+
+      {/* Export Modal */}
+      <DateRangeExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        onExport={handleExport}
+        title={exportModalConfig.title}
+        requireRows={false}
+      />
     </>
   );
 }

@@ -574,6 +574,7 @@ func bookingResponseFull(b models.BookingKesehatan) fiber.Map {
 		"note":         b.Keluhan,
 		"status":       b.Status,
 		"created_at":   b.CreatedAt,
+		"jenis_pendaftaran": b.JenisPendaftaran,
 	}
 }
 
@@ -1253,14 +1254,6 @@ func LookupStudent(c *fiber.Ctx) error {
 // ========================
 // REPORTS & EXPORT
 // ========================
-
-func ExportExcel(c *fiber.Ctx) error {
-	return jsonOK(c, fiber.Map{"message": "Export Excel successfully stubbed"})
-}
-
-func ExportPDF(c *fiber.Ctx) error {
-	return jsonOK(c, fiber.Map{"message": "Export PDF successfully stubbed"})
-}
 
 // ExportMedicalRecordPDF - Generate Rekam Medis / Sesi PDF
 func ExportMedicalRecordPDF(c *fiber.Ctx) error {

@@ -4,6 +4,9 @@ import { tenagaKesehatanService } from '@/services/api';
 import { PageContent, PageCard, PageCardHeader } from '@/components/ui/page';
 import { DashboardHero } from '@/components/ui/dashboard';
 import { DataTable } from '@/components/ui/DataTable';
+import DateRangeExportModal from '@/components/ui/DateRangeExportModal';
+import { DialogModal, ModalCancelButton, ModalSaveButton } from '@/components/ui/DialogModal';
+import toast from 'react-hot-toast';
 
 const HistoryIcon = () => <span className="material-symbols-outlined text-[16px]">history</span>;
 const AddIcon = () => <span className="material-symbols-outlined text-[16px]">medical_services</span>;
@@ -12,6 +15,12 @@ export default function PatientList() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showManualRegModal, setShowManualRegModal] = useState(false);
+  const [exportModalConfig, setExportModalConfig] = useState({ isOpen: false, type: null, title: '', requireRows: false });
+  const [manualRegData, setManualRegData] = useState({ mahasiswa_id: '', keluhan: '', nim_nama: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalSearchResults, setModalSearchResults] = useState([]);
+  const [isSearchingModal, setIsSearchingModal] = useState(false);
   
   // Search & Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,7 +61,7 @@ export default function PatientList() {
   // Debounced global lookup effect
   useEffect(() => {
     const query = searchQuery.trim();
-    if (!query || query.length < 3) {
+    if (!query || query.length < 1) {
       setGlobalResults([]);
       return;
     }
@@ -205,21 +214,68 @@ export default function PatientList() {
     }
   ];
 
-  const handleExportExcel = async () => {
+  const handleExport = async (data) => {
     try {
-      await tenagaKesehatanService.exportExcel();
+      if (exportModalConfig.type === 'offline_form') {
+        await tenagaKesehatanService.exportRegistrationFormPDF(data);
+      } else if (exportModalConfig.type === 'excel') {
+        await tenagaKesehatanService.exportExcel(data);
+      } else if (exportModalConfig.type === 'pdf') {
+        await tenagaKesehatanService.exportPDF(data);
+      }
+      setExportModalConfig({ ...exportModalConfig, isOpen: false });
     } catch (err) {
-      alert(err.message || 'Gagal export Excel.');
+      toast.error(err.message || `Gagal melakukan export.`);
     }
   };
 
-  const handleExportPDF = async () => {
+  const handleManualRegSubmit = async (e) => {
+    e.preventDefault();
+    if (!manualRegData.mahasiswa_id) {
+      toast.error('Pilih mahasiswa dari daftar pencarian terlebih dahulu!');
+      return;
+    }
+    
     try {
-      await tenagaKesehatanService.exportPDF();
+      setIsSubmitting(true);
+      await tenagaKesehatanService.createManualBooking({
+        mahasiswa_id: parseInt(manualRegData.mahasiswa_id),
+        keluhan: manualRegData.keluhan
+      });
+      toast.success('Berhasil mendaftarkan pasien secara manual!');
+      setShowManualRegModal(false);
+      setManualRegData({ mahasiswa_id: '', keluhan: '', nim_nama: '' });
+      loadPatients(); // Refresh list
     } catch (err) {
-      alert(err.message || 'Gagal export PDF.');
+      toast.error(err.message || 'Gagal mendaftarkan pasien');
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    const query = manualRegData.nim_nama.trim();
+    if (!query || query.length < 1 || manualRegData.mahasiswa_id) {
+      setModalSearchResults([]);
+      return;
+    }
+
+    const handler = setTimeout(() => {
+      setIsSearchingModal(true);
+      tenagaKesehatanService.lookupStudent(query)
+        .then((res) => {
+          setModalSearchResults(res.data || []);
+        })
+        .catch(() => {
+          setModalSearchResults([]);
+        })
+        .finally(() => {
+          setIsSearchingModal(false);
+        });
+    }, 400);
+
+    return () => clearTimeout(handler);
+  }, [manualRegData.nim_nama, manualRegData.mahasiswa_id]);
 
   return (
     <PageContent>
@@ -231,19 +287,33 @@ export default function PatientList() {
         badges={[{ label: 'Rekam Medis Mahasiswa', active: true }]}
         actions={
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleExportExcel}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-[11px] font-bold text-[var(--theme-text)] transition-all hover:bg-[var(--theme-bg)] hover:text-[var(--theme-primary)] shadow-sm"
-            >
-              <span className="material-symbols-outlined text-[16px]">download</span> Export Excel
+              <button
+                type="button"
+                onClick={() => setExportModalConfig({ isOpen: true, type: 'excel', title: 'Export Excel Laporan', requireRows: false })}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-[11px] font-bold text-[var(--theme-text)] transition-all hover:bg-[var(--theme-bg)] hover:text-[var(--theme-primary)] shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[16px]">download</span> Export Excel
+              </button>
+              <button
+                type="button"
+                onClick={() => setExportModalConfig({ isOpen: true, type: 'pdf', title: 'Export PDF Laporan', requireRows: false })}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--theme-primary)] px-4 py-2.5 text-[11px] font-bold text-white shadow-sm transition-all hover:opacity-90"
+              >
+              <span className="material-symbols-outlined text-[16px]">download</span> Export PDF
             </button>
             <button
               type="button"
-              onClick={handleExportPDF}
+              onClick={() => setExportModalConfig({ isOpen: true, type: 'offline_form', title: 'Download Form Offline', requireRows: true })}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-[11px] font-bold text-[var(--theme-text)] transition-all hover:bg-[var(--theme-bg)] hover:text-[var(--theme-primary)] shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[16px]">print</span> Form Offline
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowManualRegModal(true)}
               className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--theme-primary)] px-4 py-2.5 text-[11px] font-bold text-white shadow-sm transition-all hover:opacity-90"
             >
-              <span className="material-symbols-outlined text-[16px]">download</span> Export PDF
+              <span className="material-symbols-outlined text-[16px]">how_to_reg</span> Registrasi Manual
             </button>
           </div>
         }
@@ -304,6 +374,90 @@ export default function PatientList() {
           ]}
         />
       </div>
+
+      {/* Export Modal */}
+      <DateRangeExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        onExport={handleExport}
+        title={exportModalConfig.title}
+        requireRows={exportModalConfig.requireRows}
+      />
+
+      {/* Manual Registration Modal */}
+      <DialogModal
+        open={showManualRegModal}
+        onOpenChange={setShowManualRegModal}
+        title="Registrasi Pasien Walk-in"
+        subtitle="Registrasi Medis"
+        icon="how_to_reg"
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <ModalCancelButton onClick={() => setShowManualRegModal(false)} />
+            <ModalSaveButton 
+              form="manual-reg-form" 
+              type="submit" 
+              disabled={isSubmitting || !manualRegData.mahasiswa_id}
+              loading={isSubmitting}
+              icon={null}
+            >
+              {isSubmitting ? 'Menyimpan...' : 'Daftarkan Pasien'}
+            </ModalSaveButton>
+          </>
+        }
+      >
+        <form id="manual-reg-form" onSubmit={handleManualRegSubmit} className="flex flex-col gap-5">
+          <div>
+            <label className="mb-2 block text-[11px] font-bold text-[var(--theme-text)]">Cari Pasien / Mahasiswa</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={manualRegData.nim_nama}
+                onChange={(e) => setManualRegData({ ...manualRegData, nim_nama: e.target.value, mahasiswa_id: '' })}
+                placeholder="Ketik NIM atau Nama..."
+                className="w-full h-11 px-4 border border-[var(--theme-border)] rounded-xl text-[12px] font-semibold focus:border-[var(--theme-primary)] outline-none bg-[var(--theme-bg)] text-[var(--theme-text)] shadow-sm"
+                required
+              />
+              {isSearchingModal && <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined animate-spin text-[16px] text-[var(--theme-text-muted)]">progress_activity</span>}
+              
+              {/* Search Results Dropdown */}
+              {modalSearchResults.length > 0 && !manualRegData.mahasiswa_id && (
+                <div className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-xl shadow-lg z-10 flex flex-col p-1">
+                  {modalSearchResults.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setManualRegData({ ...manualRegData, mahasiswa_id: s.id, nim_nama: `${s.nim} - ${s.nama}` });
+                        setModalSearchResults([]);
+                      }}
+                      className="flex items-center gap-3 px-3 py-2 hover:bg-[var(--theme-bg)] rounded-lg text-left"
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-[12px] font-bold text-[var(--theme-text)]">{s.nama}</span>
+                        <span className="text-[10px] font-medium text-[var(--theme-text-muted)]">{s.nim} | {s.ProgramStudi?.nama}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div>
+            <label className="mb-2 block text-[11px] font-bold text-[var(--theme-text)]">Keluhan Utama</label>
+            <textarea
+              value={manualRegData.keluhan}
+              onChange={(e) => setManualRegData({ ...manualRegData, keluhan: e.target.value })}
+              placeholder="Deskripsikan keluhan medis pasien..."
+              rows="3"
+              className="w-full p-4 border border-[var(--theme-border)] rounded-xl text-[12px] font-semibold focus:border-[var(--theme-primary)] outline-none bg-[var(--theme-bg)] text-[var(--theme-text)] shadow-sm resize-none"
+              required
+            />
+          </div>
+        </form>
+      </DialogModal>
 
     </PageContent>
   );

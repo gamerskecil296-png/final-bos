@@ -156,6 +156,24 @@ export const psychologistService = {
     const query = new URLSearchParams(params).toString();
     return fetchWithAuth(`${API_BASE_URL}/psychologist/analytics${query ? `?${query}` : ''}`);
   },
+  downloadAnalyticsPDF: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const url = `${API_BASE_URL}/psychologist/analytics/export-pdf${query ? `?${query}` : ''}`;
+    
+    try {
+      const blob = await fetchBlobWithAuth(url);
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `laporan_analitik_${new Date().getTime()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+    } catch (err) {
+      throw new Error(err.message || 'Gagal download PDF');
+    }
+  },
   getProdiList: () => fetchWithAuth(`${API_BASE_URL}/psychologist/prodi`),
   getFakultasList: () => fetchWithAuth(`${API_BASE_URL}/psychologist/fakultas`),
   getNotifications: () => fetchWithAuth(`${API_BASE_URL}/psychologist/notifications`),
@@ -277,6 +295,11 @@ export const tenagaKesehatanService = {
     method: 'DELETE'
   }),
   getBookings: () => fetchWithAuth(`${API_BASE_URL}/tenagakes/bookings`),
+  createManualBooking: (data) => fetchWithAuth(`${API_BASE_URL}/tenagakes/bookings/manual`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }),
   getBookingDetail: (id) => fetchWithAuth(`${API_BASE_URL}/tenagakes/bookings/${id}`),
   updateBookingStatus: (id, status, alasanPenolakan = '') => fetchWithAuth(`${API_BASE_URL}/tenagakes/bookings/${id}/status`, {
     method: 'PUT',
@@ -301,9 +324,32 @@ export const tenagaKesehatanService = {
   getPsychologistSchedules: (id) => fetchWithAuth(`${API_BASE_URL}/tenagakes/psychologists/${id}/schedules`),
 
   lookupStudent: (query) => fetchWithAuth(`${API_BASE_URL}/tenagakes/students/lookup?query=${encodeURIComponent(query)}`),
-  exportExcel: async () => {
+  exportRegistrationFormPDF: async (data = {}) => {
     const token = getAuthToken();
-    const res = await fetch(`${API_BASE_URL}/tenagakes/reports/export-excel`, {
+    const q = new URLSearchParams();
+    if (data.rows) q.append('rows', data.rows);
+    if (data.startDate) q.append('start_date', data.startDate);
+    if (data.endDate) q.append('end_date', data.endDate);
+    const res = await fetch(`${API_BASE_URL}/tenagakes/reports/export-offline-form?${q.toString()}`, {
+      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+    });
+    if (!res.ok) throw new Error('Gagal mendownload Form Offline.');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Form_Registrasi_Offline_${new Date().getTime()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+  exportExcel: async (data = {}) => {
+    const token = getAuthToken();
+    const q = new URLSearchParams();
+    if (data.startDate) q.append('start_date', data.startDate);
+    if (data.endDate) q.append('end_date', data.endDate);
+    const res = await fetch(`${API_BASE_URL}/tenagakes/reports/export-excel?${q.toString()}`, {
       headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
     });
     if (!res.ok) throw new Error('Gagal mendownload Excel rekap.');
@@ -311,15 +357,18 @@ export const tenagaKesehatanService = {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `rekap_kesehatan_${new Date().toISOString().split('T')[0]}.xlsx`;
+    a.download = `Rekap_Kesehatan_${new Date().getTime()}.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     window.URL.revokeObjectURL(url);
   },
-  exportPDF: async () => {
+  exportPDF: async (data = {}) => {
     const token = getAuthToken();
-    const res = await fetch(`${API_BASE_URL}/tenagakes/reports/export-pdf`, {
+    const q = new URLSearchParams();
+    if (data.startDate) q.append('start_date', data.startDate);
+    if (data.endDate) q.append('end_date', data.endDate);
+    const res = await fetch(`${API_BASE_URL}/tenagakes/reports/export-pdf?${q.toString()}`, {
       headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
     });
     if (!res.ok) throw new Error('Gagal mendownload PDF rekap.');
@@ -327,7 +376,7 @@ export const tenagaKesehatanService = {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `rekap_kesehatan_${new Date().toISOString().split('T')[0]}.pdf`;
+    a.download = `Rekap_Kesehatan_${new Date().getTime()}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1213,15 +1262,23 @@ export const healthReportsService = {
     if (params.end_date) q.append('end_date', params.end_date)
     return fetchWithAuth(`${API_BASE_URL}/tenagakes/reports?${q.toString()}`)
   },
-  exportExcel: () => {
+  exportExcel: (params = {}) => {
     const token = getAuthToken()
-    return fetch(`${API_BASE_URL}/tenagakes/reports/export-excel`, {
+    const q = new URLSearchParams()
+    if (params.start_date) q.append('start_date', params.start_date)
+    if (params.end_date) q.append('end_date', params.end_date)
+    if (params.type) q.append('type', params.type)
+    return fetch(`${API_BASE_URL}/tenagakes/reports/export-excel?${q.toString()}`, {
       headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
     })
   },
-  exportPDF: () => {
+  exportPDF: (params = {}) => {
     const token = getAuthToken()
-    return fetch(`${API_BASE_URL}/tenagakes/reports/export-pdf`, {
+    const q = new URLSearchParams()
+    if (params.start_date) q.append('start_date', params.start_date)
+    if (params.end_date) q.append('end_date', params.end_date)
+    if (params.type) q.append('type', params.type)
+    return fetch(`${API_BASE_URL}/tenagakes/reports/export-pdf?${q.toString()}`, {
       headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
     })
   },

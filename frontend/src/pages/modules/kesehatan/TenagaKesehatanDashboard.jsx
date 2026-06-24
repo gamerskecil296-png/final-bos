@@ -95,7 +95,7 @@ export default function TenagaKesehatanDashboard() {
       value: belumScreening, 
       icon: 'group', 
       colorTheme: 'warning', 
-      badgeText: 'Mahasiswa',
+      badgeText: 'Pasien',
       badgeIcon: <span className="material-symbols-outlined text-[12px]">group</span>
     },
     { 
@@ -112,25 +112,25 @@ export default function TenagaKesehatanDashboard() {
     { 
       name: 'Jadwal Praktik', 
       icon: 'schedule', 
-      path: '/app/kesehatan/schedule',
+      path: '/tenagakes/schedule',
       permission: 'health.schedules.view'
     },
     { 
       name: 'Booking Masuk', 
       icon: 'calendar_month', 
-      path: '/app/kesehatan/bookings',
+      path: '/tenagakes/bookings',
       permission: 'health.bookings.view'
     },
     { 
       name: 'Daftar Pasien', 
       icon: 'people', 
-      path: '/app/kesehatan/patients',
+      path: '/tenagakes/patients',
       permission: 'health.patients.view'
     },
     { 
       name: 'Pengaturan', 
       icon: 'settings', 
-      path: '/app/kesehatan/settings' 
+      path: '/tenagakes/settings' 
     },
   ].filter(s => hasPermission(s.permission));
 
@@ -162,7 +162,7 @@ export default function TenagaKesehatanDashboard() {
             </button>
             {hasPermission('health.bookings.view') && (
               <button
-                onClick={() => navigate('/app/kesehatan/bookings')}
+                onClick={() => navigate(`/app/kesehatan/bookings`)}
                 className="flex-1 md:flex-initial px-4 py-2 h-10 rounded-xl font-bold text-xs transition-all text-white hover:opacity-90 shadow-sm flex items-center justify-center gap-1.5"
                 style={{ backgroundColor: 'var(--theme-primary)' }}
               >
@@ -171,7 +171,7 @@ export default function TenagaKesehatanDashboard() {
             )}
             {hasPermission('health.patients.view') && (
               <button
-                onClick={() => navigate('/app/kesehatan/patients')}
+                onClick={() => navigate(`/app/kesehatan/patients`)}
                 className="flex-1 md:flex-initial border border-border bg-surface px-4 py-2 h-10 rounded-xl font-bold text-xs transition-all hover:bg-muted/30 flex items-center justify-center gap-1.5 text-on-surface"
               >
                 <span className="material-symbols-outlined text-sm">history</span> Riwayat Pasien
@@ -216,12 +216,12 @@ export default function TenagaKesehatanDashboard() {
           <PageCard>
             <PageCardHeader
               title="Antrean Booking Hari Ini"
-              description="Daftar mahasiswa yang dijadwalkan hari ini"
+              description="Daftar pasien yang dijadwalkan hari ini"
               icon="assignment"
               action={
                 hasPermission('health.bookings.view') && (
                   <button 
-                    onClick={() => navigate('/app/kesehatan/bookings')} 
+                    onClick={() => navigate(`/app/kesehatan/bookings`)} 
                     className="text-xs font-bold hover:underline transition-colors tracking-wider font-headline"
                     style={{ color: 'var(--theme-primary)' }}
                   >
@@ -285,7 +285,7 @@ export default function TenagaKesehatanDashboard() {
                 <EmptyState 
                   icon="event_busy" 
                   title="Tidak Ada Antrean" 
-                  description="Belum ada mahasiswa yang dijadwalkan untuk diperiksa hari ini." 
+                  description="Belum ada pasien yang dijadwalkan untuk diperiksa hari ini." 
                   className="py-10"
                 />
               )}
@@ -295,7 +295,7 @@ export default function TenagaKesehatanDashboard() {
           {/* Alert Mahasiswa Perlu Perhatian */}
           <PageCard>
             <PageCardHeader
-              title="Mahasiswa Perlu Perhatian Khusus"
+              title="Pasien Perlu Perhatian Khusus"
               description="Kondisi kritis atau dalam pantauan tim medis"
               icon="warning"
               action={
@@ -335,7 +335,7 @@ export default function TenagaKesehatanDashboard() {
                 <EmptyState 
                   icon="check_circle" 
                   title="Semua Aman" 
-                  description="Saat ini tidak ada mahasiswa yang berada dalam status kritis atau pantauan khusus." 
+                  description="Saat ini tidak ada pasien yang berada dalam status kritis atau pantauan khusus." 
                   className="py-10"
                 />
               )}

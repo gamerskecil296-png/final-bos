@@ -93,7 +93,7 @@ export default function PatientMedicalRecord() {
     try {
       await tenagaKesehatanService.updateBookingStatus(bookingId, 'Selesai');
       toast.success('Sesi berhasil ditandai selesai');
-      setTimeout(() => navigate('/app/kesehatan/dashboard'), 1500);
+      setTimeout(() => navigate(`/app/kesehatan/dashboard`), 1500);
     } catch (err) {
       toast.error('Gagal menyelesaikan sesi');
     } finally {
@@ -148,7 +148,7 @@ export default function PatientMedicalRecord() {
         setError('');
       })
       .catch((err) => {
-        setError(err.message || 'Gagal memuat rekam medis mahasiswa.');
+        setError(err.message || 'Gagal memuat rekam medis pasien.');
       })
       .finally(() => {
         setLoading(false);
@@ -390,7 +390,7 @@ export default function PatientMedicalRecord() {
   const handleDownloadPDF = async (recordId) => {
     const toastId = toast.loading('Menyiapkan PDF Rekam Medis...');
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173/api';
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
       const blob = await fetchBlobWithAuth(`${API_URL}/tenagakes/medical-records/${recordId}/export-pdf`);
 
       const url = window.URL.createObjectURL(blob);
@@ -412,8 +412,8 @@ export default function PatientMedicalRecord() {
     <PageContent>
       <DashboardHero
         title="Rekam Medis"
-        highlightedTitle="Mahasiswa"
-        subtitle="Riwayat pemeriksaan, screening fisik, dan konsultasi kesehatan mahasiswa"
+        highlightedTitle="Pasien"
+        subtitle="Riwayat pemeriksaan, screening fisik, dan konsultasi kesehatan pasien"
         icon="medical_services"
         badges={[
           { label: 'Daftar Pasien', active: false },
@@ -421,7 +421,7 @@ export default function PatientMedicalRecord() {
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <button
-              onClick={() => navigate('/app/kesehatan/patients')}
+              onClick={() => navigate(`/app/kesehatan/patients`)}
               className="group inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-600 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-6px_rgba(6,81,237,0.15)] focus:outline-none focus:ring-2 focus:ring-slate-200"
             >
               <span className="material-symbols-outlined text-[18px] transition-transform group-hover:-translate-x-1">arrow_back</span>
@@ -473,93 +473,70 @@ export default function PatientMedicalRecord() {
         }
       />
 
-      {/* Patient Profile Header Card */}
-      {patient && (
-        <section className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/60 p-6 shadow-xl shadow-slate-200/40 backdrop-blur-xl">
-          {/* Decorative background elements */}
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-bku-primary/10 to-transparent blur-3xl" />
-          <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-gradient-to-tr from-emerald-500/10 to-transparent blur-3xl" />
-          
-          <div className="relative flex flex-col lg:flex-row gap-8 items-start lg:items-center justify-between z-10">
-            {/* Left: Identity */}
-            <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center w-full lg:w-auto">
-              <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-[2rem] bg-gradient-to-br from-bku-primary to-indigo-600 font-black text-3xl uppercase text-white shadow-lg shadow-bku-primary/30 ring-4 ring-white">
-                {patient.nama ? patient.nama.slice(0, 2) : 'MH'}
-                <div className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full border-4 border-white bg-emerald-500 text-white shadow-md">
-                  <span className="material-symbols-outlined text-[18px]">health_and_safety</span>
+      {/* Grid Layout matching LiveExamination */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        
+        {/* Left Column: Patient Profile & Warnings */}
+        {patient && (
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-2xl p-6 shadow-sm sticky top-6">
+              <div className="flex flex-col items-center text-center pb-6 border-b border-[var(--theme-border)] mb-6">
+                <div className="size-20 rounded-[1.5rem] bg-[var(--theme-primary-light)]/20 text-[var(--theme-primary)] flex items-center justify-center font-black text-2xl uppercase mb-4 border border-[var(--theme-primary)]/20 shadow-inner">
+                  {patient?.nama ? patient.nama.slice(0, 2) : 'MH'}
                 </div>
+                <h2 className="text-lg font-black text-[var(--theme-text)] leading-tight">{patient?.nama}</h2>
+                <p className="text-xs font-bold text-[var(--theme-text-muted)] mt-1">{patient?.nim} &bull; {patient?.ProgramStudi?.nama}</p>
               </div>
-              <div className="flex flex-col justify-center">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-2xl font-black tracking-tight text-slate-800">{patient.nama}</h2>
-                  <span className="rounded-full bg-slate-800 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm">NIM {patient.nim}</span>
-                </div>
-                <p className="mt-1.5 flex items-center gap-2 text-sm font-bold text-slate-500">
-                  <span className="material-symbols-outlined text-[18px] text-bku-primary">school</span> {patient.ProgramStudi?.nama} ({patient.Fakultas?.nama})
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500">
-                  <span className="flex items-center gap-1.5 rounded-lg bg-white/80 px-2.5 py-1 shadow-sm border border-slate-200/50"><span className="material-symbols-outlined text-[14px] text-indigo-500">calendar_today</span> Semester {patient.semester_sekarang || '-'}</span>
-                  <span className="flex items-center gap-1.5 rounded-lg bg-white/80 px-2.5 py-1 shadow-sm border border-slate-200/50"><span className="material-symbols-outlined text-[14px] text-rose-500">person</span> {patient.jenis_kelamin === 'L' ? 'Laki-laki' : patient.jenis_kelamin === 'P' ? 'Perempuan' : '-'}</span>
-                </div>
-              </div>
-            </div>
 
-            {/* Right: Quick Stats */}
-            <div className="grid grid-cols-2 sm:flex w-full lg:w-auto gap-3 sm:gap-0 sm:divide-x divide-slate-200/60 rounded-2xl border border-slate-200/60 bg-white/90 p-4 shadow-sm backdrop-blur-md">
-              <div className="flex flex-col items-center justify-center px-4 sm:px-6">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Gol. Darah</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-rose-500 leading-none">{patient.golongan_darah || 'O'}</span>
-                  <span className="text-[10px] font-bold text-rose-300">Rh+</span>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center bg-[var(--theme-bg)] p-3 rounded-xl border border-[var(--theme-border)]">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Golongan Darah</span>
+                  <span className="text-lg font-black text-rose-500">{patient?.golongan_darah || 'O'}</span>
+                </div>
+                <div className="flex justify-between items-center bg-[var(--theme-bg)] p-3 rounded-xl border border-[var(--theme-border)]">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Alergi Obat</span>
+                  <span className="text-xs font-bold text-rose-500 text-right max-w-[120px] truncate">{patient?.alergi_obat || '-'}</span>
+                </div>
+                <div className="flex justify-between items-center bg-[var(--theme-bg)] p-3 rounded-xl border border-[var(--theme-border)]">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Kontak</span>
+                  <span className="text-xs font-bold text-slate-700 text-right">{patient?.no_hp || '-'}</span>
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center px-4 sm:px-6">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Alergi Obat</p>
-                <div className="flex h-8 items-center">
-                  <p className="text-sm font-bold text-rose-500 max-w-[100px] truncate" title={patient.alergi_obat || '-'}>
-                    {patient.alergi_obat || '-'}
-                  </p>
+
+              {activeTab === 'new' && vitalsWarnings.length > 0 && (
+                <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-4 space-y-3">
+                  <h4 className="text-[10px] font-black uppercase text-rose-600 tracking-wider flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">warning</span> Alert Tanda Vital
+                  </h4>
+                  <div className="space-y-2">
+                    {vitalsWarnings.map((warn, i) => (
+                      <p key={i} className="text-[10px] font-bold text-rose-700 leading-snug">{warn.message}</p>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div className="flex flex-col items-center justify-center px-4 sm:px-6">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Kontak Pasien</p>
-                <div className="flex h-8 items-center">
-                  <p className="text-sm font-bold text-slate-700 max-w-[110px] truncate" title={patient.no_hp || '-'}>
-                    {patient.no_hp || '-'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col items-center justify-center px-4 sm:px-6">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Status</p>
-                <div className="flex h-8 items-center">
-                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm ${records.length > 0
-                      ? getStatusKesehatanColor(records[0].status_kesehatan)
-                      : 'bg-slate-100 text-slate-500 border border-slate-200/60'
-                    }`}>
-                    {records.length > 0 ? records[0].status_kesehatan : 'BARU'}
-                  </span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
-        </section>
-      )}
+        )}
 
-      {/* Loading / Error state */}
-      {loading && (
-        <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-slate-400">
-          <span className="material-symbols-outlined text-3xl animate-spin text-bku-primary/50">sync</span>
-          <p className="text-[10px] font-black uppercase tracking-widest">Memuat rekam medis...</p>
-        </div>
-      )}
+        {/* Right Column: Content */}
+        <div className="lg:col-span-2 space-y-6">
 
-      {error && (
-        <div className="text-center py-12 bg-white/70 rounded-2xl border border-slate-200/60 glass-card">
-          <p className="text-xs text-rose-500 font-bold">{error}</p>
-        </div>
-      )}
+          {/* Loading / Error state */}
+          {loading && (
+            <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-slate-400">
+              <span className="material-symbols-outlined text-3xl animate-spin text-[var(--theme-primary)]/50">sync</span>
+              <p className="text-[10px] font-black uppercase tracking-widest">Memuat rekam medis...</p>
+            </div>
+          )}
 
-      {/* Tab 1: Medical History History */}
+          {error && (
+            <div className="text-center py-12 bg-rose-50 rounded-2xl border border-rose-200">
+              <p className="text-xs text-rose-500 font-bold">{error}</p>
+            </div>
+          )}
+
+          {/* Tab 1: Medical History History */}
       {!loading && !error && activeTab === 'history' && (
         <section className="bg-white/80 rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/40 p-6 md:p-8 space-y-6 backdrop-blur-xl relative overflow-hidden">
           {/* Subtle background icon */}
@@ -584,7 +561,7 @@ export default function PatientMedicalRecord() {
                   <span className="material-symbols-outlined text-slate-400 text-4xl">medical_information</span>
                 </div>
                 <h4 className="text-sm font-black uppercase tracking-tight text-slate-700">Belum Ada Rekam Medis</h4>
-                <p className="mt-2 max-w-md text-xs font-semibold text-slate-500 leading-relaxed">Mahasiswa ini belum pernah melakukan screening fisik reguler di Klinik Kampus.</p>
+                <p className="mt-2 max-w-md text-xs font-semibold text-slate-500 leading-relaxed">Pasien ini belum pernah melakukan screening fisik reguler di Klinik Kampus.</p>
                 {bookingId && bookingData?.status !== 'Selesai' && canManageRecords && (
                   <button
                     type="button"
@@ -657,12 +634,12 @@ export default function PatientMedicalRecord() {
                               Hasil: {rec.hasil}
                             </span>
                             
-                            <div className="flex items-center gap-2 ml-auto lg:ml-2">
+                            <div className="flex flex-wrap items-center gap-2 mt-3 sm:mt-0 sm:ml-auto">
                               {canManageRecords && (
                                 <button
                                   type="button"
                                   onClick={() => handleEditRecord(rec)}
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-500 hover:text-white transition-all shadow-sm"
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-500 hover:text-white transition-all shadow-sm"
                                   title="Edit Rekam Medis"
                                 >
                                   <span className="material-symbols-outlined text-[16px]">edit</span>
@@ -670,7 +647,7 @@ export default function PatientMedicalRecord() {
                               )}
                               <button
                                 onClick={() => handleDownloadPDF(rec.id)}
-                                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 h-8 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md shadow-slate-900/20 hover:-translate-y-0.5"
+                                className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-md shadow-slate-900/20 hover:-translate-y-0.5"
                               >
                                 <span className="material-symbols-outlined text-[16px]">download</span> PDF
                               </button>
@@ -679,36 +656,36 @@ export default function PatientMedicalRecord() {
                         </div>
 
                         {/* Diagnostic details */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
+                        <div className="flex flex-wrap gap-3">
+                          <div className="flex-1 min-w-[120px] bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tinggi/Berat</p>
                             <p className="text-xs font-bold text-slate-800 mt-1">{rec.tinggi_badan || '-'}<span className="text-[10px] font-semibold text-slate-400">cm</span> / {rec.berat_badan || '-'}<span className="text-[10px] font-semibold text-slate-400">kg</span></p>
                           </div>
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
+                          <div className="flex-1 min-w-[120px] bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tensi Darah</p>
                             <p className={`text-xs font-bold mt-1 ${rec.sistole >= 140 || rec.diastole >= 90 ? 'text-rose-600' : 'text-slate-800'}`}>{rec.sistole || '-'}/{rec.diastole || '-'} <span className="text-[10px] font-semibold text-slate-400">mmHg</span></p>
                           </div>
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
+                          <div className="flex-1 min-w-[120px] bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Suhu Tubuh</p>
                             <p className={`text-xs font-bold mt-1 ${rec.suhu_tubuh > 37.5 ? 'text-rose-600' : 'text-slate-800'}`}>
                               {rec.suhu_tubuh || '-'} <span className="text-[10px] font-semibold text-slate-400">°C</span>
                             </p>
                           </div>
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
+                          <div className="flex-1 min-w-[120px] bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Denyut Nadi</p>
                             <p className="text-xs font-bold text-slate-800 mt-1">{rec.denyut_nadi || '-'} <span className="text-[10px] font-semibold text-slate-400">bpm</span></p>
                           </div>
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
+                          <div className="flex-1 min-w-[120px] bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Respirasi</p>
                             <p className="text-xs font-bold text-slate-800 mt-1">{rec.respiration_rate || '-'} <span className="text-[10px] font-semibold text-slate-400">x/m</span></p>
                           </div>
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
+                          <div className="flex-1 min-w-[120px] bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">SpO2</p>
                             <p className={`text-xs font-bold mt-1 ${rec.spo2 < 95 ? 'text-rose-600' : 'text-slate-800'}`}>
                               {rec.spo2 || '-'} <span className="text-[10px] font-semibold text-slate-400">%</span>
                             </p>
                           </div>
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
+                          <div className="flex-1 min-w-[120px] bg-slate-50 p-3 rounded-xl border border-slate-100 text-center transition-colors group-hover:bg-indigo-50/50 group-hover:border-indigo-100">
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Gula Darah</p>
                             <p className="text-xs font-bold text-slate-800 mt-1">{rec.gula_darah || '-'} <span className="text-[10px] font-semibold text-slate-400">mg/dL</span></p>
                           </div>
@@ -782,381 +759,240 @@ export default function PatientMedicalRecord() {
 
       {/* Tab 2: New Screening Form */}
       {!loading && !error && activeTab === 'new' && canManageRecords && (
-        <form onSubmit={handleSubmitScreening} className="space-y-6 relative">
+        <form onSubmit={handleSubmitScreening} className="bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-2xl p-6 shadow-sm space-y-8 relative">
           
           {/* Subtle background decoration */}
-          <div className="absolute top-0 right-0 h-64 w-64 bg-bku-primary/5 rounded-full blur-3xl -z-10" />
+          <div className="absolute top-0 right-0 h-64 w-64 bg-emerald-500/5 rounded-full blur-3xl -z-10" />
 
-          {/* Live Warning Alerts Panel */}
-          {vitalsWarnings.length > 0 && (
-            <div className="rounded-2xl border-l-4 border-rose-500 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-3 animate-in fade-in slide-in-from-top-4 duration-300">
-              <h4 className="text-xs font-black uppercase text-rose-600 tracking-wider flex items-center gap-2 font-headline">
-                <span className="material-symbols-outlined text-[18px] animate-pulse">emergency</span>
-                Peringatan Anomali Parameter Vital
-              </h4>
-              <div className="divide-y divide-rose-100/50 text-[11px] font-bold text-slate-700">
-                {vitalsWarnings.map((warn, i) => (
-                  <div key={i} className="py-2.5 flex items-center gap-3">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-500">
-                      <span className="material-symbols-outlined text-[12px]">priority_high</span>
-                    </span>
-                    <p>{warn.message}</p>
-                  </div>
-                ))}
+          {/* Info Utama Screening */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-[var(--theme-primary)] flex items-center gap-2 border-b border-[var(--theme-border)] pb-2">
+              <span className="material-symbols-outlined text-[16px]">info</span> Informasi Screening
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Tanggal Screening</label>
+                <input type="date" required value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Jenis Pemeriksaan</label>
+                <select value={jenisPemeriksaan} onChange={(e) => setJenisPemeriksaan(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]">
+                  <option value="Pemeriksaan Reguler">Pemeriksaan Reguler</option>
+                  <option value="Screening PKKMB">Screening PKKMB</option>
+                  <option value="Pemeriksaan Massal">Pemeriksaan Massal</option>
+                  <option value="Screening Atlet/Ormawa">Screening Atlet/Ormawa</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Sumber Pemeriksaan</label>
+                <select value={sumber} onChange={(e) => setSumber(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]">
+                  <option value="klinik_kampus">Klinik Kampus</option>
+                  <option value="kencana_screening">Kencana Screening</option>
+                  <option value="mandiri">Mandiri (Verifikasi)</option>
+                </select>
               </div>
             </div>
-          )}
+          </section>
 
-          {/* Main Form Fields */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Tanda Vital */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-[var(--theme-primary)] flex items-center gap-2 border-b border-[var(--theme-border)] pb-2">
+              <span className="material-symbols-outlined text-[16px]">vital_signs</span> Tanda-Tanda Vital
+            </h3>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Tinggi (cm)</label>
+                <input type="number" required value={tinggiBadan} onChange={e => setTinggiBadan(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Berat (kg)</label>
+                <input type="number" required value={beratBadan} onChange={e => setBeratBadan(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Suhu (°C)</label>
+                <input type="number" step="0.1" required value={suhuTubuh} onChange={e => setSuhuTubuh(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">SpO2 (%)</label>
+                <input type="number" required value={spO2} onChange={e => setSpO2(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Sistole</label>
+                <input type="number" required value={sistole} onChange={e => setSistole(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Diastole</label>
+                <input type="number" required value={diastole} onChange={e => setDiastole(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Nadi (bpm)</label>
+                <input type="number" required value={denyutNadi} onChange={e => setDenyutNadi(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Respirasi (x/m)</label>
+                <input type="number" required value={respirationRate} onChange={e => setRespirationRate(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Gula Darah</label>
+                <input type="number" required value={gulaDarah} onChange={e => setGulaDarah(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Golongan Darah</label>
+                <select value={golonganDarah} onChange={e => setGolonganDarah(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]">
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="AB">AB</option>
+                  <option value="O">O</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Tes Buta Warna</label>
+                <select value={butaWarna} onChange={e => setButaWarna(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]">
+                  <option value="Normal">Normal</option>
+                  <option value="Parsial">Parsial</option>
+                  <option value="Total">Total</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Skala Nyeri (0-10)</label>
+                <input type="number" min="0" max="10" required value={skalaNyeri} onChange={e => setSkalaNyeri(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+              </div>
+            </div>
 
-            {/* Left Form (Col 8) */}
-            <div className="lg:col-span-8 bg-white/80 backdrop-blur-md border border-slate-200/60 p-6 rounded-3xl shadow-sm space-y-6">
-              <h3 className="text-sm font-black tracking-tight text-slate-800 pb-3 border-b border-slate-100 flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-bku-primary/10 text-bku-primary">
-                  <span className="material-symbols-outlined text-[18px]">monitor_heart</span>
+            {bmi > 0 && (
+              <div className="bg-[var(--theme-bg)] p-3 rounded-xl border border-[var(--theme-border)] flex items-center justify-between text-xs font-semibold text-[var(--theme-text-muted)] mt-2">
+                <p>Indeks Massa Tubuh (IMT): <span className="font-bold text-[var(--theme-text)]">{bmi}</span></p>
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${bmi >= 30
+                    ? 'bg-rose-500/10 text-rose-600'
+                    : bmi >= 25
+                      ? 'bg-amber-500/10 text-amber-600'
+                      : bmi >= 18.5
+                        ? 'bg-emerald-500/10 text-emerald-600'
+                        : 'bg-blue-500/10 text-blue-600'
+                  }`}>
+                  {bmiStatus}
                 </span>
-                Parameter Vitalitas & Screening Fisik
-              </h3>
+              </div>
+            )}
+          </section>
 
-              {/* row 1: date & type & source */}
+          {/* SOAP: Subjective & Objective */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-[var(--theme-primary)] flex items-center gap-2 border-b border-[var(--theme-border)] pb-2">
+              <span className="material-symbols-outlined text-[16px]">clinical_notes</span> Anamnesa (Keluhan & Diagnosa)
+            </h3>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Catatan UKS (SOAP) / Observasi Internal</label>
+                <textarea 
+                  rows={4} 
+                  value={catatan} 
+                  onChange={e => setCatatan(e.target.value)} 
+                  placeholder="S: Pasien mengeluh pusing sejak pagi... O: Tekanan darah tinggi... A: Hipertensi... P: Istirahat..."
+                  className="w-full rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] p-3 text-sm font-medium text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)] resize-none"
+                />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Tanggal Screening</label>
-                  <input
-                    type="date"
-                    required
-                    value={tanggal}
-                    onChange={(e) => setTanggal(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
+                  <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Alergi Obat Baru</label>
+                  <input type="text" value={alergiObat} onChange={e => setAlergiObat(e.target.value)} placeholder="Misal: Paracetamol..." className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Jenis Pemeriksaan</label>
-                  <select
-                    value={jenisPemeriksaan}
-                    onChange={(e) => setJenisPemeriksaan(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  >
-                    <option value="Pemeriksaan Reguler">Pemeriksaan Reguler</option>
-                    <option value="Screening PKKMB">Screening PKKMB</option>
-                    <option value="Pemeriksaan Massal">Pemeriksaan Massal</option>
-                    <option value="Screening Atlet/Ormawa">Screening Atlet/Ormawa</option>
-                  </select>
+                  <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Riwayat Penyakit Terkait</label>
+                  <input type="text" value={riwayatPenyakit} onChange={e => setRiwayatPenyakit(e.target.value)} placeholder="Misal: Asma, Maag..." className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Sumber Pemeriksaan</label>
-                  <select
-                    value={sumber}
-                    onChange={(e) => setSumber(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  >
-                    <option value="klinik_kampus">Klinik Kampus</option>
-                    <option value="kencana_screening">Kencana Screening</option>
-                    <option value="mandiri">Mandiri (Verifikasi)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* row 2: TB, BB, Blood Sugar, Goldar */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-slate-100 pt-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Tinggi Badan (cm)</label>
-                  <input
-                    type="number"
-                    required
-                    value={tinggiBadan}
-                    onChange={(e) => setTinggiBadan(Number(e.target.value))}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Berat Badan (kg)</label>
-                  <input
-                    type="number"
-                    required
-                    value={beratBadan}
-                    onChange={(e) => setBeratBadan(Number(e.target.value))}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Gula Darah (mg/dL)</label>
-                  <input
-                    type="number"
-                    required
-                    value={gulaDarah}
-                    onChange={(e) => setGulaDarah(Number(e.target.value))}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Golongan Darah</label>
-                  <select
-                    value={golonganDarah}
-                    onChange={(e) => setGolonganDarah(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  >
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="AB">AB</option>
-                    <option value="O">O</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Calculated BMI indicator */}
-              {bmi > 0 && (
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/50 flex items-center justify-between text-xs font-semibold text-slate-600">
-                  <p>Indeks Massa Tubuh (IMT): <span className="font-bold text-slate-800">{bmi}</span></p>
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${bmi >= 30
-                      ? 'bg-rose-500/10 text-rose-600'
-                      : bmi >= 25
-                        ? 'bg-amber-500/10 text-amber-600'
-                        : bmi >= 18.5
-                          ? 'bg-emerald-500/10 text-emerald-600'
-                          : 'bg-blue-500/10 text-blue-600'
-                    }`}>
-                    {bmiStatus}
-                  </span>
-                </div>
-              )}
-
-              {/* row 3: BP (Sistole, Diastole), Suhu, SpO2, Nadi, RR */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 border-t border-slate-100 pt-4 items-end">
-                <div className="space-y-1.5 w-full">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Sistole (mmHg)</label>
-                  <input
-                    type="number"
-                    required
-                    value={sistole}
-                    onChange={(e) => setSistole(Number(e.target.value))}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-                <div className="space-y-1.5 w-full">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Diastole (mmHg)</label>
-                  <input
-                    type="number"
-                    required
-                    value={diastole}
-                    onChange={(e) => setDiastole(Number(e.target.value))}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-                <div className="space-y-1.5 w-full">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Suhu (°C)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    required
-                    value={suhuTubuh}
-                    onChange={(e) => setSuhuTubuh(Number(e.target.value))}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-                <div className="space-y-1.5 w-full">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">SpO2 (%)</label>
-                  <input
-                    type="number"
-                    required
-                    value={spO2}
-                    onChange={(e) => setSpO2(Number(e.target.value))}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-                <div className="space-y-1.5 w-full">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Denyut Nadi (bpm)</label>
-                  <input
-                    type="number"
-                    required
-                    value={denyutNadi}
-                    onChange={(e) => setDenyutNadi(Number(e.target.value))}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-                <div className="space-y-1.5 w-full">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Respirasi (x/m)</label>
-                  <input
-                    type="number"
-                    required
-                    value={respirationRate}
-                    onChange={(e) => setRespirationRate(Number(e.target.value))}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* row 4: Pain Scale, Buta warna, Alergi */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-100 pt-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Skala Nyeri (0-10)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    required
-                    value={skalaNyeri}
-                    onChange={(e) => setSkalaNyeri(Number(e.target.value))}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Tes Buta Warna</label>
-                  <select
-                    value={butaWarna}
-                    onChange={(e) => setButaWarna(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  >
-                    <option value="Normal">Normal</option>
-                    <option value="Parsial">Parsial</option>
-                    <option value="Total">Total</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Alergi Obat</label>
-                  <input
-                    type="text"
-                    value={alergiObat}
-                    onChange={(e) => setAlergiObat(e.target.value)}
-                    placeholder="Tulis nama obat jika alergi..."
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* row 5: Subjective notes */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 pt-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Riwayat Sakit / Operasi</label>
-                  <textarea
-                    value={riwayatPenyakit}
-                    onChange={(e) => setRiwayatPenyakit(e.target.value)}
-                    placeholder="Misal: Asma sejak kecil, Operasi usus buntu tahun 2024..."
-                    rows={2}
-                    className="w-full rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Konsumsi Obat Terkini</label>
-                  <textarea
-                    value={konsumsiObat}
-                    onChange={(e) => setKonsumsiObat(e.target.value)}
-                    placeholder="Obat rutin yang sedang dikonsumsi..."
-                    rows={2}
-                    className="w-full rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
+                  <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Konsumsi Obat Terkini</label>
+                  <input type="text" value={konsumsiObat} onChange={e => setKonsumsiObat(e.target.value)} placeholder="Obat rutin yang sedang dikonsumsi..." className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
                 </div>
               </div>
             </div>
+          </section>
 
-            {/* Right Form (Col 4) */}
-            <div className="lg:col-span-4 space-y-6">
-
-              {/* Diagnostics and Action Results Card */}
-              <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 p-6 rounded-3xl shadow-sm space-y-5">
-                <h3 className="text-sm font-black tracking-tight text-slate-800 pb-3 border-b border-slate-100 flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
-                    <span className="material-symbols-outlined text-[18px]">healing</span>
-                  </span>
-                  Tindakan & Resep Obat
-                </h3>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Tindakan Diberikan</label>
-                  <input
-                    type="text"
-                    value={tindakanDiberikan}
-                    onChange={(e) => setTindakanDiberikan(e.target.value)}
-                    placeholder="Misal: Istirahat di UKS, Kompres air hangat"
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Obat Diberikan (P3K)</label>
-                  <input
-                    type="text"
-                    value={obatDiberikan}
-                    onChange={(e) => setObatDiberikan(e.target.value)}
-                    placeholder="Misal: Paracetamol 500mg (1 tablet)"
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Hasil Akhir Pemeriksaan</label>
-                  <select
-                    value={hasil}
-                    disabled={suhuTubuh > 38.0 || spO2 < 92}
-                    onChange={(e) => setHasil(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white disabled:opacity-75 disabled:bg-rose-50 disabled:text-rose-600 disabled:border-rose-200"
-                  >
-                    <option value="Layak Kegiatan">Layak Kegiatan</option>
-                    <option value="Perlu Perhatian">Perlu Perhatian</option>
-                    <option value="Tidak Layak">Tidak Layak</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Rekomendasi / Saran Medis</label>
-                  <textarea
-                    value={rekomendasi}
-                    onChange={(e) => setRekomendasi(e.target.value)}
-                    placeholder="Saran medis untuk mahasiswa..."
-                    rows={3}
-                    className="w-full rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
+          {/* Tindakan & Resep */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-[var(--theme-primary)] flex items-center gap-2 border-b border-[var(--theme-border)] pb-2">
+              <span className="material-symbols-outlined text-[16px]">prescriptions</span> Tindakan & Saran Medis
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Tindakan Klinis</label>
+                <textarea 
+                  rows={2} 
+                  value={tindakanDiberikan} 
+                  onChange={e => setTindakanDiberikan(e.target.value)} 
+                  placeholder="Misal: Injeksi, Rawat Luka..."
+                  className="w-full rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] p-3 text-sm font-medium text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)] resize-none"
+                />
               </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Resep Obat Diberikan</label>
+                <textarea 
+                  rows={2} 
+                  value={obatDiberikan} 
+                  onChange={e => setObatDiberikan(e.target.value)} 
+                  placeholder="Misal: Paracetamol 500mg 3x1..."
+                  className="w-full rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] p-3 text-sm font-medium text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)] resize-none"
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Rekomendasi / Saran Medis</label>
+                <textarea 
+                  rows={2} 
+                  value={rekomendasi} 
+                  onChange={e => setRekomendasi(e.target.value)} 
+                  placeholder="Saran medis untuk pasien..."
+                  className="w-full rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] p-3 text-sm font-medium text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)] resize-none"
+                />
+              </div>
+            </div>
+          </section>
 
-              {/* Escalation Control Card */}
-              <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 p-6 rounded-3xl shadow-sm space-y-5">
-                <h3 className="text-sm font-black tracking-tight text-slate-800 pb-3 border-b border-slate-100 flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600">
-                    <span className="material-symbols-outlined text-[18px]">forward</span>
-                  </span>
-                  Rujukan & Alur Eskalasi
-                </h3>
+          {/* Rujukan & Status */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-[var(--theme-primary)] flex items-center gap-2 border-b border-[var(--theme-border)] pb-2">
+              <span className="material-symbols-outlined text-[16px]">forward</span> Evaluasi & Rujukan
+            </h3>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Evaluasi Psikologis</label>
-                  <select
-                    value={kondisiPsikologis}
-                    onChange={(e) => setKondisiPsikologis(e.target.value)}
-                    className="w-full h-11 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  >
-                    <option value="Normal">Normal (Stabil)</option>
-                    <option value="Cemas">Cemas Ringan/Sedang</option>
-                    <option value="Stres">Stres Akademik</option>
-                    <option value="Perlu Rujukan Psikolog">Perlu Rujukan Psikolog</option>
-                  </select>
-                </div>
+            <div className="bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl p-4 mb-4 space-y-4">
+              
+              {/* Evaluasi Psikologis */}
+              <div className="space-y-1.5 border-b border-[var(--theme-border)] pb-4">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] font-headline">Evaluasi Psikologis</label>
+                <select
+                  value={kondisiPsikologis}
+                  onChange={(e) => setKondisiPsikologis(e.target.value)}
+                  className="w-full h-11 px-3 bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-xl text-xs font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]"
+                >
+                  <option value="Normal">Normal (Stabil)</option>
+                  <option value="Cemas">Cemas Ringan/Sedang</option>
+                  <option value="Stres">Stres Akademik</option>
+                  <option value="Perlu Rujukan Psikolog">Perlu Rujukan Psikolog</option>
+                </select>
 
-                <div className="space-y-3 pt-2">
+                <div className="pt-3">
                   <label className="flex items-start gap-2.5 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={eskalasiPsikolog}
                       onChange={(e) => setEskalasiPsikolog(e.target.checked)}
-                      className="mt-0.5 rounded text-bku-primary focus:ring-bku-primary size-4"
+                      className="mt-0.5 rounded text-[var(--theme-primary)] focus:ring-[var(--theme-primary)] size-4"
                     />
                     <div>
-                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Rujuk ke Psikolog</span>
-                      <p className="text-[10px] text-slate-400 font-semibold leading-4 mt-0.5">Kirim notifikasi eskalasi rujukan data konseling ke tim Psikolog kampus.</p>
+                      <span className="text-xs font-bold text-[var(--theme-text)] uppercase tracking-wide">Rujuk ke Psikolog</span>
+                      <p className="text-[10px] text-[var(--theme-text-muted)] font-semibold leading-4 mt-0.5">Kirim notifikasi eskalasi rujukan data konseling ke tim Psikolog kampus.</p>
                     </div>
                   </label>
 
-                  {/* Admin Fakultas escalation removed per user request */}
-
                   {eskalasiPsikolog && (
-                    <div className="mt-3 p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-3 animate-in slide-in-from-top-2">
+                    <div className="mt-3 p-3 bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-xl space-y-3 animate-in slide-in-from-top-2">
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pilih Psikolog Tujuan (Opsional)</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Pilih Psikolog Tujuan (Opsional)</label>
                         <select
                           value={psikologId}
                           onChange={(e) => setPsikologId(e.target.value)}
-                          className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-bku-primary"
+                          className="w-full h-10 px-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl text-xs font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]"
                         >
                           <option value="">Semua Psikolog (Blast Notif)</option>
                           {psychologists.map(psi => (
@@ -1166,8 +1002,8 @@ export default function PatientMedicalRecord() {
                       </div>
 
                       {psikologId && (
-                        <div className="pt-2 border-t border-slate-200 space-y-2">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Jadwal Aktif Terdekat:</span>
+                        <div className="pt-2 border-t border-[var(--theme-border)] space-y-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)]">Jadwal Aktif Terdekat:</span>
                           {psikologSchedules.length > 0 ? (
                             <div className="flex flex-wrap gap-2 max-h-[100px] overflow-y-auto pr-1">
                               {psikologSchedules.map(slot => (
@@ -1175,196 +1011,148 @@ export default function PatientMedicalRecord() {
                                   key={slot.id}
                                   type="button"
                                   onClick={() => setPsikologSlotId(psikologSlotId === slot.id ? null : slot.id)}
-                                  className={`border rounded-md p-1.5 text-[10px] font-medium transition-all text-left ${psikologSlotId === slot.id ? 'bg-bku-primary text-white border-bku-primary' : 'bg-white border-slate-200 text-slate-600 hover:border-bku-primary/50'}`}
+                                  className={`border rounded-md p-1.5 text-[10px] font-medium transition-all text-left ${psikologSlotId === slot.id ? 'bg-[var(--theme-primary)] text-white border-[var(--theme-primary)]' : 'bg-[var(--theme-bg)] border-[var(--theme-border)] text-[var(--theme-text)] hover:border-[var(--theme-primary)]/50'}`}
                                 >
-                                  <span className={`font-bold ${psikologSlotId === slot.id ? 'text-white' : 'text-slate-800'}`}>{slot.display_date}</span> ({slot.start}-{slot.end}) - {slot.location}
+                                  <span className={`font-bold ${psikologSlotId === slot.id ? 'text-white' : 'text-[var(--theme-text)]'}`}>{slot.display_date}</span> ({slot.start}-{slot.end}) - {slot.location}
                                 </button>
                               ))}
                             </div>
                           ) : (
-                            <p className="text-[10px] text-slate-400 italic">Tidak ada jadwal aktif.</p>
+                            <p className="text-[10px] text-[var(--theme-text-muted)] italic">Tidak ada jadwal aktif.</p>
                           )}
                         </div>
                       )}
                     </div>
                   )}
-
-                  <label className="flex items-start gap-2.5 cursor-pointer select-none border-t border-slate-100 pt-3">
-                    <input
-                      type="checkbox"
-                      checked={eskalasiFaskes}
-                      onChange={(e) => setEskalasiFaskes(e.target.checked)}
-                      className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-600 size-4"
-                    />
-                    <div>
-                      <span className="text-xs font-bold text-indigo-700 uppercase tracking-wide">Rujuk ke Faskes Lanjutan</span>
-                      <p className="text-[10px] text-slate-400 font-semibold leading-4 mt-0.5">Buat surat rujukan medis resmi untuk penanganan di luar klinik kampus.</p>
-                    </div>
-                  </label>
-                </div>
-
-                {/* Formulir Surat Rujukan */}
-                {eskalasiFaskes && (
-                  <div className="mt-4 p-4 rounded-xl border border-indigo-100 bg-indigo-50/50 space-y-4 animate-in slide-in-from-top-2">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-800 flex items-center gap-1.5 border-b border-indigo-100 pb-2">
-                      <span className="material-symbols-outlined text-[14px]">local_hospital</span> Data Surat Rujukan Medis
-                    </h4>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Fasilitas Kesehatan Tujuan <span className="text-rose-500">*</span></label>
-                        <select
-                          value={faskesTujuan}
-                          onChange={(e) => setFaskesTujuan(e.target.value)}
-                          className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-indigo-400"
-                        >
-                          <option value="Klinik UBK">Klinik UBK</option>
-                          <option value="RSUD">RSUD</option>
-                          <option value="Puskesmas">Puskesmas</option>
-                          <option value="Lainnya">Lainnya</option>
-                        </select>
-                        {faskesTujuan === 'Lainnya' && (
-                          <input
-                            type="text"
-                            placeholder="Sebutkan nama Faskes..."
-                            value={faskesTujuanLainnya}
-                            onChange={(e) => setFaskesTujuanLainnya(e.target.value)}
-                            className="w-full h-10 mt-2 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:border-indigo-400"
-                          />
-                        )}
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Alasan Rujukan <span className="text-rose-500">*</span></label>
-                        <select
-                          value={alasanRujukan}
-                          onChange={(e) => setAlasanRujukan(e.target.value)}
-                          className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-indigo-400"
-                        >
-                          <option value="Penanganan Lanjutan">Penanganan Lanjutan</option>
-                          <option value="Pemeriksaan Penunjang">Pemeriksaan Penunjang</option>
-                          <option value="Gawat Darurat">Gawat Darurat</option>
-                          <option value="Lainnya">Lainnya</option>
-                        </select>
-                        {alasanRujukan === 'Lainnya' && (
-                          <input
-                            type="text"
-                            placeholder="Sebutkan alasan..."
-                            value={alasanRujukanLainnya}
-                            onChange={(e) => setAlasanRujukanLainnya(e.target.value)}
-                            className="w-full h-10 mt-2 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 outline-none focus:border-indigo-400"
-                          />
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Keluhan Utama (Penyerta Rujukan) <span className="text-rose-500">*</span></label>
-                      <textarea
-                        required={eskalasiFaskes}
-                        value={keluhanUtama}
-                        onChange={(e) => setKeluhanUtama(e.target.value)}
-                        placeholder="Jelaskan keluhan utama pasien yang mendasari rujukan..."
-                        rows={2}
-                        className="w-full rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400 bg-white resize-none"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Diagnosis Sementara <span className="text-rose-500">*</span></label>
-                        <textarea
-                          required={eskalasiFaskes}
-                          value={diagnosisSementara}
-                          onChange={(e) => setDiagnosisSementara(e.target.value)}
-                          placeholder="Sebutkan diagnosis klinis sementara..."
-                          rows={2}
-                          className="w-full rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400 bg-white resize-none"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Saran Asuransi (Klaim) <span className="text-rose-500">*</span></label>
-                        <select
-                          value={rekomendasiAsuransi}
-                          onChange={(e) => setRekomendasiAsuransi(e.target.value)}
-                          className="w-full rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400 bg-white h-[74px]"
-                        >
-                          <option value="BKU_Assurance">BKU Assurance</option>
-                          <option value="BPJS_Kesehatan">BPJS Kesehatan</option>
-                          <option value="Asuransi_Swasta">Asuransi Swasta / Pribadi</option>
-                          <option value="Mandiri">Mandiri / Tidak Menggunakan Asuransi</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <p className="text-[9px] font-bold text-indigo-600 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">info</span>
-                      Data TTV (Suhu, TD, Nadi, SpO2) akan otomatis ditarik dari form pemeriksaan fisik di atas. Saran asuransi akan ditampilkan di halaman riwayat rujukan mahasiswa.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Catatan Tambahan (UKS) */}
-              <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 p-6 rounded-3xl shadow-sm space-y-5">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Catatan UKS (Internal)</label>
-                  <textarea
-                    value={catatan}
-                    onChange={(e) => setCatatan(e.target.value)}
-                    placeholder="Tulis observasi internal Tenaga Kesehatan di sini..."
-                    rows={2}
-                    className="w-full rounded-xl border border-slate-200 p-3 text-xs font-semibold text-slate-700 outline-none focus:border-bku-primary focus:bg-white"
-                  />
-                </div>
-
-                <div className="space-y-1.5 border-t border-slate-100 pt-3">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-headline">Status Akhir Sesi Ini</label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={akhiriSesi === true}
-                        onChange={() => setAkhiriSesi(true)}
-                        className="text-bku-primary focus:ring-bku-primary h-4 w-4"
-                      />
-                      <span className="text-xs font-bold text-slate-700">Selesai / Sembuh</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={akhiriSesi === false}
-                        onChange={() => setAkhiriSesi(false)}
-                        className="text-amber-500 focus:ring-amber-500 h-4 w-4"
-                      />
-                      <span className="text-xs font-bold text-amber-700">Perlu Kontrol Lanjutan</span>
-                    </label>
-                  </div>
-                  <p className="text-[9px] text-slate-400 font-medium leading-tight mt-1">
-                    * Jika "Perlu Kontrol", sesi Booking akan tetap aktif agar mahasiswa bisa membuat jadwal ulang.
-                  </p>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full h-11 bg-bku-primary hover:bg-bku-hover text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md shadow-bku-primary/10 flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    {submitting && <span className="material-symbols-outlined animate-spin text-[16px]">sync</span>}
-                    {editingRecordId ? 'Simpan Perubahan' : 'Simpan & Rilis Rekam Medis'}
-                  </button>
                 </div>
               </div>
 
+              <label className="flex items-center gap-3 cursor-pointer pt-2">
+                <div className={`size-5 rounded flex items-center justify-center border transition-all ${eskalasiFaskes ? 'bg-[var(--theme-primary)] border-[var(--theme-primary)]' : 'border-[var(--theme-text-muted)]'}`}>
+                  {eskalasiFaskes && <span className="material-symbols-outlined text-[14px] text-white font-black">check</span>}
+                </div>
+                <input type="checkbox" checked={eskalasiFaskes} onChange={e => setEskalasiFaskes(e.target.checked)} className="hidden" />
+                <span className="text-sm font-bold text-[var(--theme-text)]">Rujuk Pasien ke Faskes Lanjutan (Rumah Sakit)</span>
+              </label>
+              
+              {eskalasiFaskes && (
+                <div className="mt-4 pt-4 border-t border-[var(--theme-border)] grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Faskes Tujuan</label>
+                    <select
+                      value={faskesTujuan}
+                      onChange={(e) => setFaskesTujuan(e.target.value)}
+                      className="w-full h-10 px-3 bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-xl text-xs font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]"
+                    >
+                      <option value="Klinik UBK">Klinik UBK</option>
+                      <option value="RSUD">RSUD</option>
+                      <option value="Puskesmas">Puskesmas</option>
+                      <option value="Lainnya">Lainnya</option>
+                    </select>
+                    {faskesTujuan === 'Lainnya' && (
+                      <input
+                        type="text"
+                        placeholder="Sebutkan nama Faskes..."
+                        value={faskesTujuanLainnya}
+                        onChange={(e) => setFaskesTujuanLainnya(e.target.value)}
+                        className="w-full h-10 mt-2 px-3 bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-xl text-xs font-medium text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]"
+                      />
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Alasan Rujukan</label>
+                    <select
+                      value={alasanRujukan}
+                      onChange={(e) => setAlasanRujukan(e.target.value)}
+                      className="w-full h-10 px-3 bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-xl text-xs font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]"
+                    >
+                      <option value="Penanganan Lanjutan">Penanganan Lanjutan</option>
+                      <option value="Pemeriksaan Penunjang">Pemeriksaan Penunjang</option>
+                      <option value="Gawat Darurat">Gawat Darurat</option>
+                      <option value="Lainnya">Lainnya</option>
+                    </select>
+                    {alasanRujukan === 'Lainnya' && (
+                      <input
+                        type="text"
+                        placeholder="Sebutkan alasan..."
+                        value={alasanRujukanLainnya}
+                        onChange={(e) => setAlasanRujukanLainnya(e.target.value)}
+                        className="w-full h-10 mt-2 px-3 bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-xl text-xs font-medium text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]"
+                      />
+                    )}
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Keluhan Utama (Penyerta Rujukan)</label>
+                    <input type="text" required={eskalasiFaskes} value={keluhanUtama} onChange={e => setKeluhanUtama(e.target.value)} placeholder="Jelaskan keluhan utama pasien..." className="w-full h-10 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Diagnosis Sementara (Untuk Surat Rujukan)</label>
+                    <input type="text" required={eskalasiFaskes} value={diagnosisSementara} onChange={e => setDiagnosisSementara(e.target.value)} placeholder="Otomatis mengambil dari catatan SOAP jika kosong..." className="w-full h-10 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]" />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Saran Asuransi (Klaim)</label>
+                    <select
+                      value={rekomendasiAsuransi}
+                      onChange={(e) => setRekomendasiAsuransi(e.target.value)}
+                      className="w-full h-10 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] px-3 text-xs font-semibold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]"
+                    >
+                      <option value="BKU_Assurance">BKU Assurance</option>
+                      <option value="BPJS_Kesehatan">BPJS Kesehatan</option>
+                      <option value="Asuransi_Swasta">Asuransi Swasta / Pribadi</option>
+                      <option value="Mandiri">Mandiri / Tidak Menggunakan Asuransi</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
 
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Status Kesehatan Akhir</label>
+                <select value={hasil} disabled={suhuTubuh > 38.0 || spO2 < 92} onChange={e => setHasil(e.target.value)} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)] disabled:opacity-75 disabled:bg-rose-50 disabled:text-rose-600 disabled:border-rose-200">
+                  <option value="Layak Kegiatan">Layak Kegiatan (Sembuh/Ringan)</option>
+                  <option value="Perlu Perhatian">Perlu Perhatian (Observasi)</option>
+                  <option value="Tidak Layak">Tidak Layak (Sakit Parah/Menular)</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase">Akhiri Sesi Booking?</label>
+                <select value={akhiriSesi} onChange={e => setAkhiriSesi(e.target.value === 'true')} className="w-full h-10 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] px-3 text-sm font-bold text-[var(--theme-text)] outline-none focus:border-[var(--theme-primary)]">
+                  <option value="true">Ya, Selesai (Pasien Pulang)</option>
+                  <option value="false">Tidak (Pasien butuh kontrol lagi)</option>
+                </select>
+              </div>
+            </div>
+          </section>
 
+          {/* Submit Action */}
+          <div className="pt-6 border-t border-[var(--theme-border)] flex gap-4">
+            <button 
+              type="button"
+              onClick={() => setActiveTab('history')}
+              className="px-6 py-3 rounded-xl border border-[var(--theme-border)] text-[var(--theme-text)] font-bold text-sm hover:bg-[var(--theme-bg)] transition-all"
+            >
+              Batal
+            </button>
+            <button 
+              type="submit"
+              disabled={submitting}
+              className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+            >
+              {submitting ? (
+                <span className="material-symbols-outlined animate-spin">sync</span>
+              ) : (
+                <span className="material-symbols-outlined">save</span>
+              )}
+              {editingRecordId ? 'Simpan Perubahan' : 'Simpan & Rilis Rekam Medis'}
+            </button>
+          </div>
+          
         </form>
       )}
 
+        </div>
+      </div>
     </PageContent>
   );
 }

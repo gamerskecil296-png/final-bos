@@ -7,9 +7,12 @@ import { UI } from '@/constants/designSystem';
 import { psychologistService } from '@/services/api';
 import { PrimaryStatsCard } from '@/components/ui/StatsCard';
 import { DashboardHero } from '@/components/ui/dashboard';
+import DateRangeExportModal from '@/components/ui/DateRangeExportModal';
+import { toast } from 'react-hot-toast';
 
 // Auto-injected Material Symbol fallbacks for removed Lucide icons
 const Activity = ({ size, className, ...props }) => <span className={`material-symbols-outlined ${className || ''} ${props.animate ? 'animate-spin' : ''}`} style={{ fontSize: size || 24, ...props.style }} {...props}>show_chart</span>;
+const DownloadIcon = ({ size, className, ...props }) => <span className={`material-symbols-outlined ${className || ''}`} style={{ fontSize: size || 24, ...props.style }} {...props}>download</span>;
 
 
 
@@ -42,6 +45,7 @@ export default function AnalyticsTrends() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [exportModalConfig, setExportModalConfig] = useState({ isOpen: false, title: 'Export Laporan Analitik' });
 
   // Filter state
   const [startDate, setStartDate] = useState('');
@@ -145,7 +149,7 @@ export default function AnalyticsTrends() {
         </div>
       </div>
       
-      <div className="flex flex-col gap-1.5 w-full sm:w-[200px]">
+      <div className="flex flex-col gap-1.5 w-full sm:w-[160px]">
         <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-muted)] pl-1">Program Studi</label>
         <div className="relative">
           <select
@@ -164,8 +168,32 @@ export default function AnalyticsTrends() {
           <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[var(--theme-text-muted)] pointer-events-none">expand_more</span>
         </div>
       </div>
+
+      <button
+        onClick={() => setExportModalConfig({ isOpen: true, title: 'Export Laporan Analitik' })}
+        className="h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest bg-[var(--theme-primary)] text-white shadow-sm flex items-center gap-2 hover:bg-[var(--theme-primary-hover)] transition-all ml-auto sm:ml-2"
+        title="Download Analytics as PDF"
+      >
+        <DownloadIcon size={16} /> <span className="hidden lg:inline">Download Laporan</span>
+      </button>
     </div>
   );
+
+  const handleExport = async ({ startDate: modalStartDate, endDate: modalEndDate }) => {
+    try {
+      const params = {};
+      if (modalStartDate) params.start_date = modalStartDate;
+      if (modalEndDate) params.end_date = modalEndDate;
+      if (selectedProdi) params.prodi_id = selectedProdi;
+      if (selectedFakultas) params.fakultas_id = selectedFakultas;
+      
+      await psychologistService.downloadAnalyticsPDF(params);
+      toast.success('Berhasil mengunduh laporan analitik');
+      setExportModalConfig({ ...exportModalConfig, isOpen: false });
+    } catch (err) {
+      toast.error(err.message || 'Gagal mengunduh laporan analitik');
+    }
+  };
 
   return (
     <>
@@ -526,6 +554,15 @@ export default function AnalyticsTrends() {
           </div>
         </div>
       </div>
+
+      {/* Export Modal */}
+      <DateRangeExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        onExport={handleExport}
+        title={exportModalConfig.title}
+        requireRows={false}
+      />
     </>
   );
 }

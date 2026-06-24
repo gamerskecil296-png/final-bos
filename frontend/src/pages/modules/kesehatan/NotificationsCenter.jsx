@@ -37,7 +37,7 @@ export default function NotificationsCenter() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get('/app/kesehatan/dashboard/notifikasi');
+      const res = await api.get('/tenagakes/notifikasi');
       const mappedData = Array.isArray(res.data.data) ? res.data.data.map(n => ({
         ...n,
         Deskripsi: stripHtmlAndEntities(n.Deskripsi || n.desc || '')
@@ -57,7 +57,7 @@ export default function NotificationsCenter() {
   const markRead = async (id) => {
     setBusyId(`read-${id}`);
     try {
-      await api.put(`/app/kesehatan/dashboard/notifikasi/${id}/baca`);
+      await api.put(`/tenagakes/notifikasi/${id}/baca`);
       setNotifications((prev) => prev.map((item) => (item.id === id || item.ID === id ? { ...item, is_read: true, IsRead: true } : item)));
     } catch (err) {
       setError(err?.message || 'Gagal menandai notifikasi.');
@@ -69,7 +69,7 @@ export default function NotificationsCenter() {
   const markAllRead = async () => {
     setBusyId('read-all');
     try {
-      await api.put('/app/kesehatan/dashboard/notifikasi/baca-semua');
+      await api.put('/tenagakes/notifikasi/baca-semua');
       setNotifications((prev) => prev.map((item) => ({ ...item, is_read: true, IsRead: true })));
     } catch (err) {
       setError(err?.message || 'Gagal menandai semua notifikasi.');
@@ -81,7 +81,7 @@ export default function NotificationsCenter() {
   const deleteNotification = async (id) => {
     setBusyId(`delete-${id}`);
     try {
-      await api.delete(`/app/kesehatan/dashboard/notifikasi/${id}`);
+      await api.delete(`/tenagakes/notifikasi/${id}`);
       setNotifications((prev) => prev.filter((item) => item.id !== id && item.ID !== id));
     } catch (err) {
       setError(err?.message || 'Gagal menghapus notifikasi.');

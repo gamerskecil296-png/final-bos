@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -760,3 +761,349 @@ func generateStableRandom(seed uint, salt int64) int {
 	}
 	return int(modVal) + 10000
 }
+
+
+// ExportAnalyticsPDF generates a PDF report for Analytics
+func ExportAnalyticsPDF(c *fiber.Ctx) error {
+	psikolog, err := currentPsikolog(c)
+	if err != nil {
+		return err
+	}
+
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+	prodiIDStr := c.Query("prodi_id")
+	fakultasIDStr := c.Query("fakultas_id")
+
+	// Calculate counts using clean queries
+	var patients int64
+	getBookingQuery(psikolog.ID, startDateStr, endDateStr, prodiIDStr, fakultasIDStr).Distinct("mahasiswa_id").Count(&patients)
+
+	var sessions int64
+	getBookingQuery(psikolog.ID, startDateStr, endDateStr, prodiIDStr, fakultasIDStr).Where("status = ?", "Selesai").Count(&sessions)
+
+	var urgent int64
+	getBookingQuery(psikolog.ID, startDateStr, endDateStr, prodiIDStr, fakultasIDStr).Where("status NOT IN ?", []string{"Selesai", "Ditolak", "Dibatalkan"}).Count(&urgent)
+
+	var stable int64
+	getSessionQuery(psikolog.ID, startDateStr, endDateStr, prodiIDStr, fakultasIDStr).Where("status_pasien IN ?", []string{"Stabil", "Pemulihan", "Membaik"}).Count(&stable)
+
+	var totalNotes int64
+	getSessionQuery(psikolog.ID, startDateStr, endDateStr, prodiIDStr, fakultasIDStr).Count(&totalNotes)
+
+	stablePercentage := 0
+	if totalNotes > 0 {
+		stablePercentage = int(float64(stable) / float64(totalNotes) * 100)
+	}
+
+	// Bookings
+	var bookings []models.PsikologBooking
+	qBookings := config.DB.Model(&models.PsikologBooking{}).Where("psikolog_id = ?", psikolog.ID)
+	if startDateStr != "" {
+		if t, err := time.Parse("2006-01-02", startDateStr); err == nil {
+			qBookings = qBookings.Where("tanggal >= ?", t)
+		}
+	}
+	if endDateStr != "" {
+		if t, err := time.Parse("2006-01-02", endDateStr); err == nil {
+			tEnd := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, t.Location())
+			qBookings = qBookings.Where("tanggal <= ?", tEnd)
+		}
+	}
+	if prodiIDStr != "" || fakultasIDStr != "" {
+		qBookings = qBookings.Joins("JOIN mahasiswa.mahasiswa m ON m.id = mahasiswa_id")
+		if prodiIDStr != "" {
+			qBookings = qBookings.Where("m.prodi_id = ?", prodiIDStr)
+		}
+		if fakultasIDStr != "" {
+			qBookings = qBookings.Where("m.fakultas_id = ?", fakultasIDStr)
+		}
+	}
+	_ = qBookings.Preload("Mahasiswa").Preload("Mahasiswa.ProgramStudi").Find(&bookings).Error
+
+	issueCounts := map[string]int{}
+	var academicCount int64
+	var nonAcademicCount int64
+	for _, booking := range bookings {
+		if booking.Topik != "" {
+			issueCounts[booking.Topik]++
+			if booking.Topik == "Akademik" {
+				academicCount++
+			} else {
+				nonAcademicCount++
+			}
+		}
+	}
+	
+	type IssueCount struct {
+		Name  string
+		Count int
+	}
+	var topIssues []IssueCount
+	for issue, count := range issueCounts {
+		topIssues = append(topIssues, IssueCount{Name: issue, Count: count})
+	}
+	sort.Slice(topIssues, func(i, j int) bool { return topIssues[i].Count > topIssues[j].Count })
+
+	// Jurusan/Prodi Terbanyak
+	var prodiCounts []struct {
+		ProdiName string `gorm:"column:prodi_name"`
+		Count     int64  `gorm:"column:count"`
+	}
+	qProdi := config.DB.Model(&models.PsikologBooking{}).
+		Select("ps.nama as prodi_name, count(psikolog.bookings.id) as count").
+		Joins("JOIN mahasiswa.mahasiswa m ON m.id = mahasiswa_id").
+		Joins("JOIN fakultas.program_studi ps ON ps.id = m.prodi_id").
+		Where("psikolog_id = ?", psikolog.ID)
+	if startDateStr != "" {
+		if t, err := time.Parse("2006-01-02", startDateStr); err == nil {
+			qProdi = qProdi.Where("tanggal >= ?", t)
+		}
+	}
+	if endDateStr != "" {
+		if t, err := time.Parse("2006-01-02", endDateStr); err == nil {
+			tEnd := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, t.Location())
+			qProdi = qProdi.Where("tanggal <= ?", tEnd)
+		}
+	}
+	if prodiIDStr != "" {
+		qProdi = qProdi.Where("m.prodi_id = ?", prodiIDStr)
+	}
+	if fakultasIDStr != "" {
+		qProdi = qProdi.Where("m.fakultas_id = ?", fakultasIDStr)
+	}
+	qProdi.Group("ps.nama").Order("count desc").Limit(5).Scan(&prodiCounts)
+
+	// -- PDF GENERATION --
+	pdf := gofpdf.New("L", "mm", "A4", "")
+	pdf.SetMargins(20, 20, 20)
+	pdf.AddPage()
+
+	// Header Image Background
+	pdf.ImageOptions("assets/kop_rektorat_landscape.jpeg", 0, 0, 297, 210, false, gofpdf.ImageOptions{ImageType: "JPEG", ReadDpi: true}, 0, "")
+
+	// Move cursor below header
+	pdf.SetY(45)
+
+	// Title
+	pdf.SetFont("Helvetica", "B", 13)
+	pdf.CellFormat(0, 6, "LAPORAN ANALITIK KONSELING", "", 1, "C", false, 0, "")
+	pdf.SetFont("Helvetica", "", 9.5)
+	pdf.SetTextColor(100, 116, 139)
+	docNumber := utils.GenerateDocumentNumber("Riwayat Konseling") // Reusing document number for analytics as requested
+	refNum := fmt.Sprintf("Nomor: %s", docNumber)
+	pdf.CellFormat(0, 5, refNum, "", 1, "C", false, 0, "")
+	
+	// Print Filters
+	filterText := "Filter: "
+	if startDateStr != "" { filterText += fmt.Sprintf("Dari: %s ", startDateStr) }
+	if endDateStr != "" { filterText += fmt.Sprintf("Sampai: %s ", endDateStr) }
+	if prodiIDStr != "" { filterText += fmt.Sprintf("Prodi ID: %s ", prodiIDStr) }
+	if fakultasIDStr != "" { filterText += fmt.Sprintf("Fakultas ID: %s ", fakultasIDStr) }
+	if filterText == "Filter: " { filterText = "Filter: Semua Data" }
+	
+	pdf.SetFont("Helvetica", "I", 9)
+	pdf.CellFormat(0, 5, filterText, "", 1, "C", false, 0, "")
+	pdf.Ln(5)
+
+	// Divider
+	pdf.SetDrawColor(226, 232, 240)
+	pdf.Line(20, pdf.GetY(), 277, pdf.GetY())
+	pdf.Ln(5)
+
+	// 1. Ringkasan Kasus
+	pdf.SetTextColor(15, 23, 42)
+	pdf.SetFont("Helvetica", "B", 11)
+	pdf.CellFormat(0, 6, "I. RINGKASAN KASUS", "", 1, "L", false, 0, "")
+	pdf.Ln(2)
+
+	summaryData := [][]string{
+		{"Total Pasien Unik", fmt.Sprintf("%d Pasien", patients), "Persentase Pasien Stabil", fmt.Sprintf("%d%%", stablePercentage)},
+		{"Total Sesi Selesai", fmt.Sprintf("%d Sesi", sessions), "Total Kasus Akademik", fmt.Sprintf("%d Kasus", academicCount)},
+		{"Total Kasus Mendesak (Urgent)", fmt.Sprintf("%d Kasus", urgent), "Total Kasus Non-Akademik", fmt.Sprintf("%d Kasus", nonAcademicCount)},
+	}
+
+	pdf.SetFillColor(248, 250, 252)
+	pdf.SetDrawColor(241, 245, 249)
+
+	for _, row := range summaryData {
+		pdf.SetFont("Helvetica", "B", 9)
+		pdf.CellFormat(55, 6, row[0], "1", 0, "L", true, 0, "")
+		pdf.SetFont("Helvetica", "", 9)
+		pdf.CellFormat(73, 6, row[1], "1", 0, "L", false, 0, "")
+
+		pdf.SetFont("Helvetica", "B", 9)
+		pdf.CellFormat(55, 6, row[2], "1", 0, "L", true, 0, "")
+		pdf.SetFont("Helvetica", "", 9)
+		pdf.CellFormat(74, 6, row[3], "1", 1, "L", false, 0, "")
+	}
+	pdf.Ln(8)
+
+	// 2. Isu Dominan & Prodi
+	yStart := pdf.GetY()
+	
+	// Left Column: Isu Dominan
+	pdf.SetFont("Helvetica", "B", 11)
+	pdf.CellFormat(128, 6, "II. TOPIK KONSELING (ISU DOMINAN)", "", 1, "L", false, 0, "")
+	pdf.Ln(2)
+	
+	pdf.SetFont("Helvetica", "B", 9)
+	pdf.CellFormat(90, 6, "Topik", "1", 0, "L", true, 0, "")
+	pdf.CellFormat(38, 6, "Jumlah", "1", 1, "C", true, 0, "")
+	
+	pdf.SetFont("Helvetica", "", 9)
+	if len(topIssues) == 0 {
+		pdf.CellFormat(128, 6, "Belum ada data topik.", "1", 1, "C", false, 0, "")
+	} else {
+		limit := 5
+		if len(topIssues) < limit { limit = len(topIssues) }
+		for i := 0; i < limit; i++ {
+			pdf.CellFormat(90, 6, " " + topIssues[i].Name, "1", 0, "L", false, 0, "")
+			pdf.CellFormat(38, 6, fmt.Sprintf("%d", topIssues[i].Count), "1", 1, "C", false, 0, "")
+		}
+	}
+	
+	// Right Column: Prodi Terbanyak
+	pdf.SetXY(160, yStart)
+	pdf.SetFont("Helvetica", "B", 11)
+	pdf.CellFormat(117, 6, "III. DISTRIBUSI PROGRAM STUDI TERBANYAK", "", 1, "L", false, 0, "")
+	pdf.SetX(160)
+	pdf.Ln(2)
+	pdf.SetX(160)
+	pdf.SetFont("Helvetica", "B", 9)
+	pdf.CellFormat(90, 6, "Program Studi", "1", 0, "L", true, 0, "")
+	pdf.CellFormat(27, 6, "Jumlah", "1", 1, "C", true, 0, "")
+	
+	pdf.SetFont("Helvetica", "", 9)
+	if len(prodiCounts) == 0 {
+		pdf.SetX(160)
+		pdf.CellFormat(117, 6, "Belum ada data prodi.", "1", 1, "C", false, 0, "")
+	} else {
+		for _, pc := range prodiCounts {
+			pdf.SetX(160)
+			pdf.CellFormat(90, 6, " " + pc.ProdiName, "1", 0, "L", false, 0, "")
+			pdf.CellFormat(27, 6, fmt.Sprintf("%d", pc.Count), "1", 1, "C", false, 0, "")
+		}
+	}
+	
+	pdf.Ln(15)
+
+	// 3. Daftar Mahasiswa Konsultasi
+	// Filter unique students from bookings
+	type PatientData struct {
+		NIM    string
+		Name   string
+		Prodi  string
+		Status string
+	}
+	uniquePatients := make(map[uint]PatientData)
+	var patientList []PatientData
+	for _, b := range bookings {
+		if _, exists := uniquePatients[b.MahasiswaID]; !exists {
+			prodiName := "-"
+			if b.Mahasiswa.ProgramStudi.Nama != "" {
+				prodiName = b.Mahasiswa.ProgramStudi.Nama
+			}
+			
+			// Simple status determination based on latest booking
+			statusStr := "Urgent/Aktif"
+			if b.Status == "Selesai" {
+				statusStr = "Selesai"
+			}
+			
+			p := PatientData{
+				NIM:    b.Mahasiswa.NIM,
+				Name:   b.Mahasiswa.Nama,
+				Prodi:  prodiName,
+				Status: statusStr,
+			}
+			uniquePatients[b.MahasiswaID] = p
+			patientList = append(patientList, p)
+		}
+	}
+	
+	// Draw Table
+	if pdf.GetY() > 165 {
+		pdf.AddPage()
+	}
+	
+	pdf.SetFont("Helvetica", "B", 11)
+	pdf.CellFormat(0, 6, "IV. DAFTAR MAHASISWA KONSULTASI", "", 1, "L", false, 0, "")
+	pdf.Ln(2)
+	
+	pdf.SetFont("Helvetica", "B", 9)
+	pdf.SetFillColor(241, 245, 249)
+	pdf.CellFormat(10, 6, "No", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(35, 6, "NIM", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(80, 6, "Nama Mahasiswa", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(85, 6, "Program Studi", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(47, 6, "Status Terbaru", "1", 1, "C", true, 0, "")
+	
+	pdf.SetFont("Helvetica", "", 9)
+	if len(patientList) == 0 {
+		pdf.CellFormat(257, 6, "Tidak ada data mahasiswa pada periode/filter ini.", "1", 1, "C", false, 0, "")
+	} else {
+		for idx, p := range patientList {
+			// Auto page break protection for table rows
+			if pdf.GetY() > 185 {
+				pdf.AddPage()
+				pdf.SetFont("Helvetica", "B", 9)
+				pdf.SetFillColor(241, 245, 249)
+				pdf.CellFormat(10, 6, "No", "1", 0, "C", true, 0, "")
+				pdf.CellFormat(35, 6, "NIM", "1", 0, "C", true, 0, "")
+				pdf.CellFormat(80, 6, "Nama Mahasiswa", "1", 0, "C", true, 0, "")
+				pdf.CellFormat(85, 6, "Program Studi", "1", 0, "C", true, 0, "")
+				pdf.CellFormat(47, 6, "Status Terbaru", "1", 1, "C", true, 0, "")
+				pdf.SetFont("Helvetica", "", 9)
+			}
+			
+			pdf.CellFormat(10, 6, fmt.Sprintf("%d", idx+1), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(35, 6, " "+p.NIM, "1", 0, "L", false, 0, "")
+			pdf.CellFormat(80, 6, " "+p.Name, "1", 0, "L", false, 0, "")
+			pdf.CellFormat(85, 6, " "+p.Prodi, "1", 0, "L", false, 0, "")
+			pdf.CellFormat(47, 6, " "+p.Status, "1", 1, "C", false, 0, "")
+		}
+	}
+	
+	pdf.Ln(15)
+
+	// ── Signature ────────────────────────────────────────────────────────────
+	if pdf.GetY()+30 > 195 {
+		pdf.AddPage()
+	}
+
+	sigY := pdf.GetY()
+	pdf.SetFont("Helvetica", "", 8)
+	pdf.SetTextColor(15, 23, 42)
+	pdf.SetXY(180, sigY)
+	pdf.CellFormat(0, 4, fmt.Sprintf("Bandung, %s", formatIndoDate(time.Now())), "", 1, "C", false, 0, "")
+	pdf.SetX(180)
+	pdf.CellFormat(0, 4, "Psikolog Penanggung Jawab,", "", 1, "C", false, 0, "")
+
+	pdf.SetXY(180, sigY+18)
+	pdf.SetFont("Helvetica", "BU", 8.5)
+	pdf.CellFormat(0, 4, psikolog.Nama, "", 1, "C", false, 0, "")
+	pdf.SetX(180)
+	pdf.SetFont("Helvetica", "", 7.5)
+	pdf.SetTextColor(100, 116, 139)
+	pdf.CellFormat(0, 3.5, fmt.Sprintf("BKU Care Center NIP/Reg: %d", psikolog.ID), "", 1, "C", false, 0, "")
+
+	// Save and download
+	exportsDir := "uploads/exports"
+	if err := os.MkdirAll(exportsDir, 0755); err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("laporan_analitik_%s.pdf", time.Now().Format("20060102150405"))
+	filePath := filepath.Join(exportsDir, fileName)
+
+	if err := pdf.OutputFileAndClose(filePath); err != nil {
+		return err
+	}
+
+	c.Set("Content-Type", "application/pdf")
+	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"Laporan_Analitik_%s.pdf\"", time.Now().Format("02-01-2006")))
+	return c.SendFile(filePath)
+}
+
+

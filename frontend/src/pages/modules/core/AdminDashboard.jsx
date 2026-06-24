@@ -136,7 +136,7 @@ export default function AdminDashboard() {
 
       const [analyticsRes, settingsRes] = await Promise.all([
         adminService.getDashboardAnalytics(params),
-        api.get('/app/dashboard/academic-settings').catch(() => ({ data: { status: 'error' } }))
+        api.get('/super-admin/academic-settings').catch(() => ({ data: { status: 'error' } }))
       ])
       if (analyticsRes.status === 'success') setData(analyticsRes.data)
       if (settingsRes?.data?.status === 'success') setAcademicSettings(settingsRes.data.data)

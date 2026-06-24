@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { psychologistService } from '@/services/api';
+import { psychologistService, adminService } from '@/services/api';
 import { toast } from 'react-hot-toast';
 import { DataTable } from '@/components/ui/DataTable';
 import { DialogModal } from '@/components/ui/DialogModal';
@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { DashboardHero } from '@/components/ui/dashboard';
 import { usePermission } from '@/hooks/usePermission';
+import useAuthStore from '@/store/useAuthStore';
+import AdminPsychologistReferrals from './AdminPsychologistReferrals';
 
 // Material Symbol icons
 const Send = ({ size, className, ...props }) => <span className={`material-symbols-outlined shrink-0 ${className || ''}`} style={{ fontSize: size || 24, ...props.style }} {...props}>send</span>;
@@ -17,6 +19,14 @@ const FileDownload = ({ size, className, ...props }) => <span className={`materi
 
 
 export default function ReferralManagement() {
+    const user = useAuthStore(state => state.user);
+    const roleStr = user?.role ? user.role.toLowerCase() : '';
+    const isSuperAdmin = roleStr.includes('super') && roleStr.includes('admin');
+
+    if (isSuperAdmin) {
+    return <AdminPsychologistReferrals />;
+  }
+
   const [referrals, setReferrals] = useState([]);
   const [mahasiswaList, setMahasiswaList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -264,6 +274,44 @@ export default function ReferralManagement() {
       className: 'text-right',
       render: (v, row) => (
         <div className="flex items-center justify-end gap-1.5 shrink-0">
+          {isSuperAdmin && (row.approval_status === 'menunggu_approval' || row.approval_status === 'pending' || row.status === 'Pending') && (
+            <>
+              <button
+                onClick={async () => {
+                  try {
+                    await adminService.approvePsychologistReferral(row.id, 'approve', '');
+                    toast.success('Rujukan disetujui');
+                    loadReferrals();
+                  } catch (err) {
+                    toast.error('Gagal menyetujui: ' + err.message);
+                  }
+                }}
+                className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200 transition-colors border border-emerald-200 active:scale-95"
+                title="Setujui Rujukan"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[16px]">check</span>
+              </button>
+              <button
+                onClick={async () => {
+                  const note = prompt('Alasan penolakan:');
+                  if (note === null) return;
+                  try {
+                    await adminService.approvePsychologistReferral(row.id, 'reject', note);
+                    toast.success('Rujukan ditolak');
+                    loadReferrals();
+                  } catch (err) {
+                    toast.error('Gagal menolak: ' + err.message);
+                  }
+                }}
+                className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center hover:bg-rose-200 transition-colors border border-rose-200 active:scale-95"
+                title="Tolak Rujukan"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[16px]">close</span>
+              </button>
+            </>
+          )}
           {row.surat_rujukan_url && (
             <button
               onClick={async () => {

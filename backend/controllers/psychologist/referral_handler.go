@@ -225,7 +225,7 @@ func CreateReferral(c *fiber.Ctx) error {
 						tipeRef,
 						mhsNama,
 					),
-					Link: "/admin/psychologists/referrals",
+					Link: "",
 				})
 			}
 		}

@@ -6,6 +6,7 @@ import { DashboardHero } from '@/components/ui/dashboard';
 import { PrimaryStatsCard } from '@/components/ui/StatsCard';
 import { DataTable } from '@/components/ui/DataTable';
 import { DialogModal } from '@/components/ui/DialogModal';
+import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
 import { usePermission } from '@/hooks/usePermission';
 
 // Reusable Icon
@@ -35,12 +36,12 @@ export default function BAPManagement({ isEmbedded = false }) {
   const [baps, setBaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const { hasPermission } = usePermission();
-  const canCreate = hasPermission('health.bap.create') || hasPermission('health.bap');
-  const canEdit = hasPermission('health.bap.update') || hasPermission('health.bap');
-  const canDelete = hasPermission('health.bap.delete') || hasPermission('health.bap');  
+  const canManageBap = hasPermission('health.bap.update') || hasPermission('health.bap.create') || hasPermission('health.bap');
+  
   // Modals
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [deleteBapId, setDeleteBapId] = useState(null);
   
   const [selectedBAP, setSelectedBAP] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -228,17 +229,23 @@ export default function BAPManagement({ isEmbedded = false }) {
   };
 
   // Delete BAP
-  const handleDelete = async (bap) => {
-    if (!confirm('Yakin ingin menghapus BAP ini?')) return;
+  const handleDelete = async () => {
+    if (!deleteBapId) return;
 
     try {
-      const res = await bapService.deleteBAP(bap.id);
+      const res = await bapService.deleteBAP(deleteBapId);
       if (res.status === 'success') {
         toast.success('BAP berhasil dihapus');
+        if (selectedBAP?.id === deleteBapId) {
+          setIsDetailModalOpen(false);
+          setSelectedBAP(null);
+        }
       }
       fetchBAPs();
     } catch (err) {
       toast.error(err.message || 'Gagal menghapus BAP');
+    } finally {
+      setDeleteBapId(null);
     }
   };
 
@@ -344,7 +351,7 @@ export default function BAPManagement({ isEmbedded = false }) {
           <button onClick={() => handleOpenDetail(row)} className="h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--theme-bg)] hover:bg-[var(--theme-surface)] border border-[var(--theme-border)] text-[var(--theme-text)] transition-colors" title="Detail">
             <Icon name="visibility" size={14} />
           </button>
-          {canEdit && (
+          {canManageBap && (
             <button onClick={() => handleOpenEdit(row)} className="h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] transition-colors" title="Edit">
               <Icon name="edit" size={14} />
             </button>
@@ -352,8 +359,8 @@ export default function BAPManagement({ isEmbedded = false }) {
           <button onClick={() => handleDownloadPDF(row)} className="h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--theme-info)]/10 hover:bg-[var(--theme-info)]/20 text-[var(--theme-info)] transition-colors" title="Download PDF">
             <Icon name="download" size={14} />
           </button>
-          {canDelete && row.status === 'DRAFT' && (
-             <button onClick={() => handleDelete(row)} className="h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--theme-error)]/10 hover:bg-[var(--theme-error)]/20 text-[var(--theme-error)] transition-colors" title="Hapus">
+          {canManageBap && (
+             <button onClick={(e) => { e.stopPropagation(); setDeleteBapId(row.id); }} className="h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--theme-error)]/10 hover:bg-[var(--theme-error)]/20 text-[var(--theme-error)] transition-colors" title="Hapus">
                <Icon name="delete" size={14} />
              </button>
           )}
@@ -374,7 +381,7 @@ export default function BAPManagement({ isEmbedded = false }) {
           icon="description"
           badges={[{ label: 'BAP Management', active: true }]}
           actions={
-            canCreate && (
+            canManageBap && (
               <button
                 onClick={handleOpenCreate}
                 className="flex items-center gap-2 px-4 py-2 bg-[var(--theme-primary)] text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-sm text-xs uppercase tracking-wider"
@@ -681,7 +688,7 @@ export default function BAPManagement({ isEmbedded = false }) {
                 <div className="flex flex-wrap gap-2">
                   {existingPhotos.map((url, idx) => (
                     <div key={`exist-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-[var(--theme-border)]">
-                      <img src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}${url}`} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={`${import.meta.env.VITE_API_BASE_URL || ''}${url}`} alt="Preview" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => setExistingPhotos(existingPhotos.filter((_, i) => i !== idx))}
@@ -729,7 +736,7 @@ export default function BAPManagement({ isEmbedded = false }) {
                 <option value="FINAL">Finalisasi Dokumen BAP</option>
              </select>
              {form.status === 'FINAL' && (
-                <p className="text-[10px] text-[var(--theme-warning)] mt-2 italic font-medium">Perhatian: BAP dengan status Final tidak dapat dihapus lagi.</p>
+                <p className="text-[10px] text-[var(--theme-warning)] mt-2 italic font-medium">BAP dengan status Final akan dikunci dari pengeditan jika sudah ada persetujuan.</p>
              )}
           </div>
 
@@ -811,18 +818,26 @@ export default function BAPManagement({ isEmbedded = false }) {
               </div>
             </div>
 
-            <div className="pt-4 flex gap-3">
+            <div className="pt-4 flex flex-wrap gap-3">
               {canManageBap && (
-                <button
-                  onClick={() => { setIsDetailModalOpen(false); handleOpenEdit(selectedBAP); }}
-                  className="flex-1 py-2.5 rounded-xl border border-[var(--theme-border)] text-[var(--theme-text)] hover:bg-[var(--theme-surface)] text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2"
-                >
-                  <Icon name="edit" size={16} /> Edit
-                </button>
+                <>
+                  <button
+                    onClick={() => { setIsDetailModalOpen(false); handleOpenEdit(selectedBAP); }}
+                    className="flex-1 py-2.5 rounded-xl border border-[var(--theme-border)] text-[var(--theme-text)] hover:bg-[var(--theme-surface)] text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2"
+                  >
+                    <Icon name="edit" size={16} /> Edit
+                  </button>
+                  <button
+                    onClick={() => { setDeleteBapId(selectedBAP.id); }}
+                    className="flex-1 py-2.5 rounded-xl border border-[var(--theme-error)]/20 text-[var(--theme-error)] hover:bg-[var(--theme-error)]/10 text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2"
+                  >
+                    <Icon name="delete" size={16} /> Hapus
+                  </button>
+                </>
               )}
               <button
                 onClick={() => handleDownloadPDF(selectedBAP)}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--theme-primary)] hover:opacity-90 text-white text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2"
+                className="w-full md:flex-1 py-2.5 rounded-xl bg-[var(--theme-primary)] hover:opacity-90 text-white text-[11px] font-bold uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2"
               >
                 <Icon name="download" size={16} /> Download PDF
               </button>
@@ -830,6 +845,15 @@ export default function BAPManagement({ isEmbedded = false }) {
           </div>
         )}
       </DialogModal>
+
+      <DeleteConfirmModal
+        isOpen={!!deleteBapId}
+        onClose={() => setDeleteBapId(null)}
+        onConfirm={handleDelete}
+        title="Hapus BAP?"
+        description="Apakah Anda yakin ingin menghapus Berita Acara Pemeriksaan ini? Data tidak dapat dikembalikan."
+        confirmText="YA, HAPUS"
+      />
     </div>
   );
 

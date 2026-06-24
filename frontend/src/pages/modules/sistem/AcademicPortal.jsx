@@ -162,7 +162,7 @@ const AcademicPortal = () => {
 
     const fetchSettings = async () => {
         try {
-            const res = await api.get('/app/dashboard/academic-settings')
+            const res = await api.get('/super-admin/academic-settings')
             if (res.data.status === 'success') {
                 setAcademicSettings(prev => ({
                     ...prev,
@@ -220,7 +220,7 @@ const AcademicPortal = () => {
     const handleUpdate = async () => {
         setSubmitting(true)
         try {
-            await api.put('/app/dashboard/academic-settings', {
+            await api.put('/super-admin/academic-settings', {
                 TahunAkademik: academicSettings.TahunAkademik,
                 Semester: academicSettings.Semester,
                 IsKRSOpen: academicSettings.IsKRSOpen,

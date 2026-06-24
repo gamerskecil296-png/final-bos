@@ -54,9 +54,10 @@ type BookingKesehatan struct {
 	MahasiswaID uint            `gorm:"index" json:"mahasiswa_id"`
 	Mahasiswa   Mahasiswa       `gorm:"foreignKey:MahasiswaID" json:"mahasiswa,omitempty"`
 
-	Keluhan         string `json:"keluhan"`
-	Status          string `gorm:"index;default:'Menunggu Konfirmasi'" json:"status"` // Menunggu Konfirmasi / Dikonfirmasi / Ditolak / Selesai
-	AlasanPenolakan string `json:"alasan_penolakan"`
+	Keluhan          string `json:"keluhan"`
+	Status           string `gorm:"index;default:'Menunggu Konfirmasi'" json:"status"` // Menunggu Konfirmasi / Dikonfirmasi / Ditolak / Selesai
+	AlasanPenolakan  string `json:"alasan_penolakan"`
+	JenisPendaftaran string `gorm:"default:'Online'" json:"jenis_pendaftaran"` // Online / Offline
 }
 
 func (BookingKesehatan) TableName() string {

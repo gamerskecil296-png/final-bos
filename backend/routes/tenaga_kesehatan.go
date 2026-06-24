@@ -25,6 +25,7 @@ func SetupTenagaKesehatanRoutes(app *fiber.App) {
 	api.Delete("/schedules/:id", middleware.RequirePermission("health.schedules.update"), tenaga_kesehatan.DeleteSchedule)
 
 	api.Get("/bookings", middleware.RequirePermission("health.bookings.view"), tenaga_kesehatan.GetBookings)
+	api.Post("/bookings/manual", middleware.RequirePermission("health.bookings.update"), tenaga_kesehatan.CreateManualBooking)
 	api.Get("/bookings/:id", middleware.RequirePermission("health.bookings.view"), tenaga_kesehatan.GetBookingDetail)
 	api.Put("/bookings/:id/status", middleware.RequirePermission("health.bookings.update"), tenaga_kesehatan.UpdateBookingStatus)
 
@@ -45,6 +46,7 @@ func SetupTenagaKesehatanRoutes(app *fiber.App) {
 	// Laporan
 	api.Get("/reports/export-excel", middleware.RequirePermission("health.reports.view"), tenaga_kesehatan.ExportExcel)
 	api.Get("/reports/export-pdf", middleware.RequirePermission("health.reports.view"), tenaga_kesehatan.ExportPDF)
+	api.Get("/reports/export-offline-form", middleware.RequirePermission("health.reports.view"), tenaga_kesehatan.ExportRegistrationFormPDF)
 
 	// Document Settings
 	api.Get("/document-settings", controllers.GetDocumentSettings)

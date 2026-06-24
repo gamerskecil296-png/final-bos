@@ -250,6 +250,7 @@ export default function AppRoutes() {
 
       {/* ─── Kesehatan ─── */}
       <Route path="kesehatan/dashboard" element={<Guarded perm={P.KESEHATAN_DASHBOARD_VIEW}><TenagaKesehatanDashboard /></Guarded>} />
+      <Route path="kesehatan/notifications" element={<Guarded perm={P.KESEHATAN_DASHBOARD_VIEW}><NotificationPage /></Guarded>} />
       <Route path="kesehatan/list" element={<Guarded perm={P.KESEHATAN_VIEW}><AdminTenagaKesehatanList /></Guarded>} />
       <Route path="kesehatan/bookings" element={<Guarded perm={P.KESEHATAN_BOOKING_VIEW}><TenagaKesehatanBooking /></Guarded>} />
       <Route path="kesehatan/schedule" element={<Guarded perm={P.KESEHATAN_SCHEDULE_VIEW}><TenagaKesehatanSchedule /></Guarded>} />

@@ -36,6 +36,7 @@ func SetupPsychologistRoutes(app *fiber.App) {
 	api.Post("/assessments", middleware.RequirePermission("psychologist.reports.update"), psychologist.CreateAssessment)
 
 	api.Get("/analytics", middleware.RequirePermission("psychologist.dashboard.view"), psychologist.GetAnalytics)
+	api.Get("/analytics/export-pdf", middleware.RequirePermission("psychologist.dashboard.view"), psychologist.ExportAnalyticsPDF)
 	api.Get("/prodi", psychologist.GetProdiList)
 	api.Get("/fakultas", psychologist.GetFakultasList)
 

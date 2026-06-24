@@ -6,6 +6,7 @@ import { PageContent } from '@/components/ui/page';
 import { DashboardHero } from '@/components/ui/dashboard';
 import { PrimaryStatsCard } from '@/components/ui/StatsCard';
 import { DataTable } from '@/components/ui/DataTable';
+import DateRangeExportModal from '@/components/ui/DateRangeExportModal';
 
 // Reusable Icon
 const Icon = ({ name, size = 16, className = '', ...props }) => (
@@ -29,7 +30,7 @@ const ResultBadge = ({ result }) => {
     'Tidak Layak': { label: 'Tidak Layak', bg: 'color-mix(in srgb, var(--theme-error) 10%, transparent)', text: 'var(--theme-error)', border: 'color-mix(in srgb, var(--theme-error) 20%, transparent)', dot: 'var(--theme-error)' },
   };
   const c = config[result] || { label: result || '—', bg: 'var(--theme-surface)', text: 'var(--theme-text-muted)', border: 'var(--theme-border)', dot: 'transparent' };
-  
+
   return (
     <span
       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border whitespace-nowrap"
@@ -45,6 +46,7 @@ export default function ReportsPage() {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [exportModalConfig, setExportModalConfig] = useState({ isOpen: false, type: null, title: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRecord, setSelectedRecord] = useState(null);
 
@@ -95,28 +97,28 @@ export default function ReportsPage() {
     try {
       const { startDate: reqStart, endDate: reqEnd } = getDateRange();
       const res = await healthReportsService.getReports({ start_date: reqStart, end_date: reqEnd });
-      
+
       let data = res?.data || null;
-      
+
       // MOCK DATA INJECTION
       if (!data || !data.summary || data.summary.total_diperiksa === 0) {
         data = {
-           summary: {
-             total_diperiksa: 150,
-             layak: 120,
-             perlu_perhatian: 20,
-             tidak_layak: 10
-           },
-           records: [
-             { id: 1, tanggal: '2026-06-12T08:30:00Z', mahasiswa: { nama: 'Rudi Hartono', nim: '10119001', program_studi: { nama: 'Teknik Sipil' } }, hasil: 'Layak Kegiatan' },
-             { id: 2, tanggal: '2026-06-11T10:15:00Z', mahasiswa: { nama: 'Siti Aminah', nim: '10119012', program_studi: { nama: 'Sistem Informasi' } }, hasil: 'Perlu Perhatian' },
-             { id: 3, tanggal: '2026-06-10T14:45:00Z', mahasiswa: { nama: 'Budi Santoso', nim: '10219005', program_studi: { nama: 'Ilmu Hukum' } }, hasil: 'Tidak Layak' },
-             { id: 4, tanggal: '2026-06-10T09:00:00Z', mahasiswa: { nama: 'Dewi Lestari', nim: '10319020', program_studi: { nama: 'Akuntansi' } }, hasil: 'Layak Kegiatan' },
-             { id: 5, tanggal: '2026-06-09T11:20:00Z', mahasiswa: { nama: 'Andi Wijaya', nim: '10419011', program_studi: { nama: 'Kedokteran' } }, hasil: 'Layak Kegiatan' }
-           ]
+          summary: {
+            total_diperiksa: 150,
+            layak: 120,
+            perlu_perhatian: 20,
+            tidak_layak: 10
+          },
+          records: [
+            { id: 1, tanggal: '2026-06-12T08:30:00Z', mahasiswa: { nama: 'Rudi Hartono', nim: '10119001', program_studi: { nama: 'Teknik Sipil' } }, hasil: 'Layak Kegiatan' },
+            { id: 2, tanggal: '2026-06-11T10:15:00Z', mahasiswa: { nama: 'Siti Aminah', nim: '10119012', program_studi: { nama: 'Sistem Informasi' } }, hasil: 'Perlu Perhatian' },
+            { id: 3, tanggal: '2026-06-10T14:45:00Z', mahasiswa: { nama: 'Budi Santoso', nim: '10219005', program_studi: { nama: 'Ilmu Hukum' } }, hasil: 'Tidak Layak' },
+            { id: 4, tanggal: '2026-06-10T09:00:00Z', mahasiswa: { nama: 'Dewi Lestari', nim: '10319020', program_studi: { nama: 'Akuntansi' } }, hasil: 'Layak Kegiatan' },
+            { id: 5, tanggal: '2026-06-09T11:20:00Z', mahasiswa: { nama: 'Andi Wijaya', nim: '10419011', program_studi: { nama: 'Kedokteran' } }, hasil: 'Layak Kegiatan' }
+          ]
         };
       }
-      
+
       setReportData(data);
     } catch (err) {
       console.error('Error fetching reports:', err);
@@ -130,45 +132,42 @@ export default function ReportsPage() {
     fetchReports();
   }, [dateRange, startDate, endDate]);
 
-  // Export Excel
-  const handleExportExcel = async () => {
-    setExporting(true);
-    try {
-      const response = await healthReportsService.exportExcel();
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `laporan_klinis_${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-      toast.success('Excel berhasil didownload');
-    } catch (err) {
-      toast.success('Simulasi Export Excel berhasil!');
-    } finally {
-      setExporting(false);
-    }
+  const openExportModal = (type, title) => {
+    setExportModalConfig({ isOpen: true, type, title });
   };
 
-  // Export PDF
-  const handleExportPDF = async () => {
+  const handleExport = async ({ startDate, endDate }) => {
     setExporting(true);
     try {
-      const response = await healthReportsService.exportPDF();
+      let response;
+      let filename = 'export';
+
+      if (exportModalConfig.type === 'excel') {
+        response = await healthReportsService.exportExcel({ start_date: startDate, end_date: endDate, type: 'all' });
+        filename = `Laporan_Analitik_${startDate}_sd_${endDate}.xlsx`;
+      } else if (exportModalConfig.type === 'pdf') {
+        response = await healthReportsService.exportPDF({ start_date: startDate, end_date: endDate, type: 'all' });
+        filename = `Laporan_Analitik_${startDate}_sd_${endDate}.pdf`;
+      }
+
+      if (!response.ok) {
+        throw new Error('Gagal melakukan export');
+      }
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `laporan_klinis_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('PDF berhasil didownload');
+      
+      toast.success('Export berhasil didownload');
+      setExportModalConfig({ ...exportModalConfig, isOpen: false });
     } catch (err) {
-      toast.success('Simulasi Export PDF berhasil!');
+      toast.error('Gagal mendownload export: ' + (err.message || 'Error server'));
     } finally {
       setExporting(false);
     }
@@ -178,9 +177,9 @@ export default function ReportsPage() {
 
   // Local search filter
   const filteredRecords = records.filter(r => {
-     if (!searchQuery) return true;
-     const q = searchQuery.toLowerCase();
-     return r.mahasiswa?.nama?.toLowerCase().includes(q) || r.mahasiswa?.nim?.toLowerCase().includes(q) || r.mahasiswa?.program_studi?.nama?.toLowerCase().includes(q);
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return r.mahasiswa?.nama?.toLowerCase().includes(q) || r.mahasiswa?.nim?.toLowerCase().includes(q) || r.mahasiswa?.program_studi?.nama?.toLowerCase().includes(q);
   });
 
   const columns = [
@@ -201,13 +200,13 @@ export default function ReportsPage() {
       sortable: true,
       render: (v, row) => (
         <div className="flex items-center gap-3">
-           <div className="w-8 h-8 rounded-full bg-[var(--theme-bg)] border border-[var(--theme-border)] flex items-center justify-center shrink-0 overflow-hidden">
-             <Icon name="person" size={16} className="text-[var(--theme-text-muted)]" />
-           </div>
-           <div className="flex flex-col gap-0.5">
-             <p className="font-bold text-[12px] text-[var(--theme-text)]">{row.mahasiswa?.nama || '—'}</p>
-             <p className="text-[10px] font-medium text-[var(--theme-text-muted)]">{row.mahasiswa?.nim || '—'}</p>
-           </div>
+          <div className="w-8 h-8 rounded-full bg-[var(--theme-bg)] border border-[var(--theme-border)] flex items-center justify-center shrink-0 overflow-hidden">
+            <Icon name="person" size={16} className="text-[var(--theme-text-muted)]" />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <p className="font-bold text-[12px] text-[var(--theme-text)]">{row.mahasiswa?.nama || row.mahasiswa?.Nama || '—'}</p>
+            <p className="text-[10px] font-medium text-[var(--theme-text-muted)]">{row.mahasiswa?.nim || row.mahasiswa?.NIM || '—'}</p>
+          </div>
         </div>
       )
     },
@@ -217,7 +216,7 @@ export default function ReportsPage() {
       sortable: true,
       render: (v, row) => (
         <span className="text-[11px] font-semibold text-[var(--theme-text-subtle)]">
-           {row.mahasiswa?.program_studi?.nama || '—'}
+          {row.mahasiswa?.program_studi?.nama || row.mahasiswa?.ProgramStudi?.Nama || '—'}
         </span>
       )
     },
@@ -254,18 +253,20 @@ export default function ReportsPage() {
         actions={
           <div className="flex items-center gap-2">
             <button
-              onClick={handleExportExcel}
+              type="button"
+              onClick={() => openExportModal('excel', 'Export Excel')}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-emerald-500/20 transition-all disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-[11px] font-bold text-[var(--theme-text)] transition-all hover:bg-[var(--theme-bg)] hover:text-[var(--theme-primary)] shadow-sm disabled:opacity-50"
             >
-              <Icon name="table_view" size={16} /> Excel
+              <span className="material-symbols-outlined text-[16px]">download</span> Export Excel
             </button>
             <button
-              onClick={handleExportPDF}
+              type="button"
+              onClick={() => openExportModal('pdf', 'Export PDF')}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 text-rose-600 border border-rose-500/20 text-[11px] font-bold uppercase tracking-widest rounded-xl hover:bg-rose-500/20 transition-all disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--theme-primary)] px-4 py-2.5 text-[11px] font-bold text-white shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
             >
-              <Icon name="picture_as_pdf" size={16} /> PDF
+              <span className="material-symbols-outlined text-[16px]">download</span> Export PDF
             </button>
           </div>
         }
@@ -274,10 +275,10 @@ export default function ReportsPage() {
       {/* Overview Header & Sleek Filter */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full mt-2 mb-2">
         <h2 className="text-[13px] font-black uppercase tracking-widest text-[var(--theme-text)] flex items-center gap-2">
-           <Icon name="monitoring" size={18} className="text-[var(--theme-primary)]" />
-           Ikhtisar Laporan
+          <Icon name="monitoring" size={18} className="text-[var(--theme-primary)]" />
+          Laporan
         </h2>
-        
+
         <div className="flex flex-wrap items-center gap-3">
           {dateRange === 'custom' && (
             <div className="flex items-center gap-2 pr-3 md:border-r border-[var(--theme-border)]">
@@ -299,21 +300,20 @@ export default function ReportsPage() {
 
           <div className="flex items-center p-1 bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-xl shadow-sm">
             {['today', 'week', 'month', 'custom'].map((range) => {
-               const labels = { today: 'Hari Ini', week: '7 Hari', month: '30 Hari', custom: 'Custom' };
-               const isActive = dateRange === range;
-               return (
-                 <button
-                   key={range}
-                   onClick={() => setDateRange(range)}
-                   className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-widest uppercase transition-all ${
-                     isActive
-                       ? 'bg-[var(--theme-primary)] text-white shadow-md'
-                       : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] hover:bg-[var(--theme-bg)]'
-                   }`}
-                 >
-                   {labels[range]}
-                 </button>
-               );
+              const labels = { today: 'Hari Ini', week: '7 Hari', month: '30 Hari', custom: 'Custom' };
+              const isActive = dateRange === range;
+              return (
+                <button
+                  key={range}
+                  onClick={() => setDateRange(range)}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-widest uppercase transition-all ${isActive
+                      ? 'bg-[var(--theme-primary)] text-white shadow-md'
+                      : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] hover:bg-[var(--theme-bg)]'
+                    }`}
+                >
+                  {labels[range]}
+                </button>
+              );
             })}
           </div>
         </div>
@@ -353,76 +353,76 @@ export default function ReportsPage() {
 
       {/* Percentage Visualizations */}
       {summary.total_diperiksa > 0 && (
-         <div className="grid grid-cols-3 gap-4">
-            {/* Layak */}
-            <div className="bg-[var(--theme-bg)] rounded-xl p-4 border border-[var(--theme-border)] text-center shadow-sm relative overflow-hidden flex flex-col items-center justify-center">
-              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                 <Icon name="check_circle" size={80} className="text-[var(--theme-success)]" />
-              </div>
-              <div className="relative w-16 h-16 mx-auto mb-2">
-                <svg className="w-16 h-16 transform -rotate-90">
-                  <circle cx="32" cy="32" r="28" strokeWidth="6" stroke="var(--theme-border)" fill="none" />
-                  <circle
-                    cx="32" cy="32" r="28" strokeWidth="6" fill="none"
-                    stroke="var(--theme-success)"
-                    strokeDasharray={`${(summary.layak / summary.total_diperiksa) * 175.93} 175.93`}
-                    strokeLinecap="round"
-                    className="transition-all duration-1000 ease-out"
-                  />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-[12px] font-black text-[var(--theme-text)]">
-                  {Math.round((summary.layak / summary.total_diperiksa) * 100)}%
-                </span>
-              </div>
-              <p className="text-[11px] font-black tracking-widest uppercase text-[var(--theme-success)]">Rasio Layak</p>
+        <div className="grid grid-cols-3 gap-4">
+          {/* Layak */}
+          <div className="bg-[var(--theme-bg)] rounded-xl p-4 border border-[var(--theme-border)] text-center shadow-sm relative overflow-hidden flex flex-col items-center justify-center">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+              <Icon name="check_circle" size={80} className="text-[var(--theme-success)]" />
             </div>
-            
-            {/* Pantauan */}
-            <div className="bg-[var(--theme-bg)] rounded-xl p-4 border border-[var(--theme-border)] text-center shadow-sm relative overflow-hidden flex flex-col items-center justify-center">
-              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                 <Icon name="warning" size={80} className="text-[var(--theme-warning)]" />
-              </div>
-              <div className="relative w-16 h-16 mx-auto mb-2">
-                <svg className="w-16 h-16 transform -rotate-90">
-                  <circle cx="32" cy="32" r="28" strokeWidth="6" stroke="var(--theme-border)" fill="none" />
-                  <circle
-                    cx="32" cy="32" r="28" strokeWidth="6" fill="none"
-                    stroke="var(--theme-warning)"
-                    strokeDasharray={`${(summary.perlu_perhatian / summary.total_diperiksa) * 175.93} 175.93`}
-                    strokeLinecap="round"
-                    className="transition-all duration-1000 ease-out"
-                  />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-[12px] font-black text-[var(--theme-text)]">
-                  {Math.round((summary.perlu_perhatian / summary.total_diperiksa) * 100)}%
-                </span>
-              </div>
-              <p className="text-[11px] font-black tracking-widest uppercase text-[var(--theme-warning)]">Rasio Pantauan</p>
+            <div className="relative w-16 h-16 mx-auto mb-2">
+              <svg className="w-16 h-16 transform -rotate-90">
+                <circle cx="32" cy="32" r="28" strokeWidth="6" stroke="var(--theme-border)" fill="none" />
+                <circle
+                  cx="32" cy="32" r="28" strokeWidth="6" fill="none"
+                  stroke="var(--theme-success)"
+                  strokeDasharray={`${(summary.layak / summary.total_diperiksa) * 175.93} 175.93`}
+                  strokeLinecap="round"
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-[12px] font-black text-[var(--theme-text)]">
+                {Math.round((summary.layak / summary.total_diperiksa) * 100)}%
+              </span>
             </div>
+            <p className="text-[11px] font-black tracking-widest uppercase text-[var(--theme-success)]">Rasio Layak</p>
+          </div>
 
-            {/* Tidak Layak */}
-            <div className="bg-[var(--theme-bg)] rounded-xl p-4 border border-[var(--theme-border)] text-center shadow-sm relative overflow-hidden flex flex-col items-center justify-center">
-              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                 <Icon name="cancel" size={80} className="text-[var(--theme-error)]" />
-              </div>
-              <div className="relative w-16 h-16 mx-auto mb-2">
-                <svg className="w-16 h-16 transform -rotate-90">
-                  <circle cx="32" cy="32" r="28" strokeWidth="6" stroke="var(--theme-border)" fill="none" />
-                  <circle
-                    cx="32" cy="32" r="28" strokeWidth="6" fill="none"
-                    stroke="var(--theme-error)"
-                    strokeDasharray={`${(summary.tidak_layak / summary.total_diperiksa) * 175.93} 175.93`}
-                    strokeLinecap="round"
-                    className="transition-all duration-1000 ease-out"
-                  />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-[12px] font-black text-[var(--theme-text)]">
-                  {Math.round((summary.tidak_layak / summary.total_diperiksa) * 100)}%
-                </span>
-              </div>
-              <p className="text-[11px] font-black tracking-widest uppercase text-[var(--theme-error)]">Rasio Ditolak</p>
+          {/* Pantauan */}
+          <div className="bg-[var(--theme-bg)] rounded-xl p-4 border border-[var(--theme-border)] text-center shadow-sm relative overflow-hidden flex flex-col items-center justify-center">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+              <Icon name="warning" size={80} className="text-[var(--theme-warning)]" />
             </div>
-         </div>
+            <div className="relative w-16 h-16 mx-auto mb-2">
+              <svg className="w-16 h-16 transform -rotate-90">
+                <circle cx="32" cy="32" r="28" strokeWidth="6" stroke="var(--theme-border)" fill="none" />
+                <circle
+                  cx="32" cy="32" r="28" strokeWidth="6" fill="none"
+                  stroke="var(--theme-warning)"
+                  strokeDasharray={`${(summary.perlu_perhatian / summary.total_diperiksa) * 175.93} 175.93`}
+                  strokeLinecap="round"
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-[12px] font-black text-[var(--theme-text)]">
+                {Math.round((summary.perlu_perhatian / summary.total_diperiksa) * 100)}%
+              </span>
+            </div>
+            <p className="text-[11px] font-black tracking-widest uppercase text-[var(--theme-warning)]">Rasio Pantauan</p>
+          </div>
+
+          {/* Tidak Layak */}
+          <div className="bg-[var(--theme-bg)] rounded-xl p-4 border border-[var(--theme-border)] text-center shadow-sm relative overflow-hidden flex flex-col items-center justify-center">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+              <Icon name="cancel" size={80} className="text-[var(--theme-error)]" />
+            </div>
+            <div className="relative w-16 h-16 mx-auto mb-2">
+              <svg className="w-16 h-16 transform -rotate-90">
+                <circle cx="32" cy="32" r="28" strokeWidth="6" stroke="var(--theme-border)" fill="none" />
+                <circle
+                  cx="32" cy="32" r="28" strokeWidth="6" fill="none"
+                  stroke="var(--theme-error)"
+                  strokeDasharray={`${(summary.tidak_layak / summary.total_diperiksa) * 175.93} 175.93`}
+                  strokeLinecap="round"
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-[12px] font-black text-[var(--theme-text)]">
+                {Math.round((summary.tidak_layak / summary.total_diperiksa) * 100)}%
+              </span>
+            </div>
+            <p className="text-[11px] font-black tracking-widest uppercase text-[var(--theme-error)]">Rasio Ditolak</p>
+          </div>
+        </div>
       )}
 
       {/* DataTable */}
@@ -490,19 +490,19 @@ export default function ReportsPage() {
                   <div>
                     <p className="text-xs text-slate-400">Fakultas</p>
                     <p className="text-sm font-semibold text-slate-700">
-                      {selectedRecord.mahasiswa?.fakultas?.nama || 
-                       selectedRecord.mahasiswa?.fakultas?.Nama ||
-                       selectedRecord.mahasiswa?.Fakultas?.nama || 
-                       selectedRecord.mahasiswa?.Fakultas?.Nama || '—'}
+                      {selectedRecord.mahasiswa?.fakultas?.nama ||
+                        selectedRecord.mahasiswa?.fakultas?.Nama ||
+                        selectedRecord.mahasiswa?.Fakultas?.nama ||
+                        selectedRecord.mahasiswa?.Fakultas?.Nama || '—'}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-400">Program Studi</p>
                     <p className="text-sm font-semibold text-slate-700">
-                      {selectedRecord.mahasiswa?.program_studi?.nama || 
-                       selectedRecord.mahasiswa?.program_studi?.Nama ||
-                       selectedRecord.mahasiswa?.ProgramStudi?.nama || 
-                       selectedRecord.mahasiswa?.ProgramStudi?.Nama || '—'}
+                      {selectedRecord.mahasiswa?.program_studi?.nama ||
+                        selectedRecord.mahasiswa?.program_studi?.Nama ||
+                        selectedRecord.mahasiswa?.ProgramStudi?.nama ||
+                        selectedRecord.mahasiswa?.ProgramStudi?.Nama || '—'}
                     </p>
                   </div>
                 </div>
@@ -544,8 +544,8 @@ export default function ReportsPage() {
                   <div>
                     <p className="text-xs text-slate-400">Tekanan Darah</p>
                     <p className="text-sm font-semibold text-slate-700">
-                      {selectedRecord.sistole && selectedRecord.diastole 
-                        ? `${selectedRecord.sistole}/${selectedRecord.diastole} mmHg` 
+                      {selectedRecord.sistole && selectedRecord.diastole
+                        ? `${selectedRecord.sistole}/${selectedRecord.diastole} mmHg`
                         : '—'}
                     </p>
                   </div>
@@ -572,8 +572,8 @@ export default function ReportsPage() {
                   <div>
                     <p className="text-xs text-slate-400">Tinggi / Berat Badan</p>
                     <p className="text-sm font-semibold text-slate-700">
-                      {selectedRecord.tinggi_badan && selectedRecord.berat_badan 
-                        ? `${selectedRecord.tinggi_badan} cm / ${selectedRecord.berat_badan} kg` 
+                      {selectedRecord.tinggi_badan && selectedRecord.berat_badan
+                        ? `${selectedRecord.tinggi_badan} cm / ${selectedRecord.berat_badan} kg`
                         : '—'}
                     </p>
                   </div>
@@ -649,6 +649,14 @@ export default function ReportsPage() {
           </motion.div>
         </div>
       )}
+      {/* Export Modal */}
+      <DateRangeExportModal
+        isOpen={exportModalConfig.isOpen}
+        onClose={() => setExportModalConfig({ ...exportModalConfig, isOpen: false })}
+        onExport={handleExport}
+        title={exportModalConfig.title}
+        requireRows={false}
+      />
     </PageContent>
   );
 }

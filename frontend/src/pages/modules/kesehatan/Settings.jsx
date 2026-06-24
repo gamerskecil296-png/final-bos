@@ -185,7 +185,7 @@ export default function Settings() {
                         <div>
                           <h2 className="text-xs font-black font-headline uppercase tracking-widest text-slate-700">Identitas Medis</h2>
                           <p className="mt-1 max-w-xl text-[11px] font-semibold leading-relaxed text-slate-400">
-                            Data profile ini akan ditampilkan pada sistem antrean booking konsultasi mahasiswa.
+                            Data profile ini akan ditampilkan pada sistem antrean booking konsultasi pasien.
                           </p>
                         </div>
                       </div>
@@ -234,7 +234,7 @@ export default function Settings() {
                         <div className="md:col-span-2 pt-2 border-t border-slate-100 flex items-center justify-between">
                           <div>
                             <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Status Keaktifan Pelayanan</span>
-                            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Jika dinonaktifkan, profil Anda tidak akan muncul untuk booking mahasiswa baru.</p>
+                            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Jika dinonaktifkan, profil Anda tidak akan muncul untuk booking pasien baru.</p>
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer select-none">
                             <input
@@ -270,7 +270,7 @@ export default function Settings() {
                         <div>
                           <h2 className="text-xs font-black uppercase tracking-widest text-amber-800">Keamanan Kredensial</h2>
                           <p className="mt-1 text-[11px] font-semibold leading-relaxed text-amber-700">
-                            Ganti password secara rutin untuk menjaga kerahasiaan akses rekam medis mahasiswa.
+                            Ganti password secara rutin untuk menjaga kerahasiaan akses rekam medis pasien.
                           </p>
                         </div>
                       </div>
