@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fetch theme config asynchronously to prevent Main Thread blocking -->
+  <script>
+    window.__APPLY_THEME__ = function () {
+      if (!window.__THEME_CONFIG__) return;
+
+      var t = window.__THEME_CONFIG__;
+      var root = document.documentElement.style;
+
+      // Helper functions
+      var hexToRgb = function (hex) {
+        var rgb = hex.replace('#', '').match(/.{2}/g);
+        if (!rgb || rgb.length < 3) return [0, 0, 0];
+        return [parseInt(rgb[0], 16), parseInt(rgb[1], 16), parseInt(rgb[2], 16)];
+      };
+
+      var getLuminance = function (hex) {
+        var rgb = hexToRgb(hex);
+        var r = rgb[0] / 255, g = rgb[1] / 255, b = rgb[2] / 255;
+        r = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+        g = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+        b = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+
+      var getTextColor = function (bg) {
+        return getLuminance(bg) < 0.179 ? '#FFFFFF' : '#1B1C1C';
+      };
+
+      var getMutedColor = function (text) {
+        return text === '#FFFFFF' ? '#E2E8F0' : '#64748B';
+      };
+
+      var primary = t.color_primary || '#0D2B55';
+      var secondary = t.color_secondary || '#C89B3C';
+      var accent = t.color_accent || '#E8B84B';
+      var background = t.color_background || '#F9F6F0';
+      var surface = t.color_surface || '#FFFFFF';
+
+      // Text on background
+      var textOnBg = getTextColor(background);
+      var mutedOnBg = getMutedColor(textOnBg);
+
+      // Text on surface
+      var textOnSurface = getTextColor(surface);
+      var mutedOnSurface = getMutedColor(textOnSurface);
+
+      // Text on primary (for hero)
+      var textOnPrimary = getTextColor(primary);
+      var mutedOnPrimary = getMutedColor(textOnPrimary);
+
+      // Sidebar
+      var sidebarText = '#FFFFFF';
+
+      // Set CSS variables
+      root.setProperty('--theme-primary', primary);
+      root.setProperty('--theme-secondary', secondary);
+      root.setProperty('--theme-accent', accent);
+      root.setProperty('--theme-bg', background);
+      root.setProperty('--theme-surface', surface);
+      root.setProperty('--theme-text', textOnBg);
+      root.setProperty('--theme-text-muted', mutedOnBg);
+      root.setProperty('--theme-text-on-primary', textOnPrimary);
+      root.setProperty('--theme-muted-on-primary', mutedOnPrimary);
+      root.setProperty('--theme-text-on-surface', textOnSurface);
+      root.setProperty('--theme-muted-on-surface', mutedOnSurface);
+      root.setProperty('--theme-h1', textOnBg);
+      root.setProperty('--theme-h2', textOnBg);
+      root.setProperty('--theme-h3', textOnBg);
+      root.setProperty('--theme-h4', textOnBg);
+      root.setProperty('--theme-sidebar-bg', primary);
+      root.setProperty('--theme-sidebar-text', sidebarText);
+      root.setProperty('--theme-sidebar-text-muted', '#E2E8F0');
+      root.setProperty('--theme-border', '#E2E8F0');
+      root.setProperty('--theme-border-muted', '#F1F5F9');
+      root.setProperty('--theme-success', '#16a34a');
+      root.setProperty('--theme-warning', '#d97706');
+      root.setProperty('--theme-error', '#dc2626');
+      root.setProperty('--theme-info', '#2563eb');
+      root.setProperty('--theme-font-headline', "'" + (t.font_headline || 'Plus Jakarta Sans') + "', sans-serif");
+      root.setProperty('--theme-font-body', "'" + (t.font_body || 'Inter') + "', sans-serif");
+
+      var fBody = "'" + (t.font_body || 'Inter') + "', sans-serif";
+      if (document.body) {
+        document.body.style.fontFamily = fBody;
+      } else {
+        document.addEventListener('DOMContentLoaded', function () {
+          document.body.style.fontFamily = fBody;
+        });
+      }
+
+      // Favicon
+      if (t.favicon_url) {
+        var links = document.querySelectorAll('link[rel="icon"]');
+        links.forEach(function (link) { link.href = t.favicon_url; });
+      }
+
+      window.__THEME_LOADED__ = true;
+    };
+
+    (function () {
+      fetch('%VITE_API_URL%/public/theme')
+        .then(res => res.json())
+        .then(response => {
+          if (response.status === 'success' && response.data) {
+            window.__THEME_CONFIG__ = response.data;
+            window.__APPLY_THEME__();
+          }
+        })
+        .catch(e => console.error('Theme fetch error:', e));
+    })();
+  </script>
+  <!-- Preload: browser mulai unduh font ikon SEBELUM CSS/JS lainnya -->
+  <link rel="preload" href="/fonts/material-symbols-outlined.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Material Symbols — Self-hosted + Anti-FOUT (INLINE agar browser baca sejak awal) -->
+  <style>
+    @font-face {
+      font-family: 'Material Symbols Outlined';
+      font-style: normal;
+      font-weight: 100 700;
+      font-display: block;
+      src: url('/fonts/material-symbols-outlined.woff2') format('woff2');
+    }
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+      /* Sembunyikan teks mentah sampai font siap */
+      visibility: hidden;
+    }
+    /* Kelas ini ditambahkan oleh script setelah font loaded */
+    .icons-ready .material-symbols-outlined {
+      visibility: visible !important;
+    }
+  </style>
+  <script>
+    /* Deteksi saat font ikon selesai dimuat, lalu tampilkan semua ikon */
+    document.fonts.ready.then(function () {
+      document.documentElement.classList.add('icons-ready');
+    });
+  </script>
+  <title>BKU Student Hub</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
+</html>

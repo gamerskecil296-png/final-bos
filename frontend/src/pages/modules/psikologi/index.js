@@ -1,0 +1,19 @@
+// Modul: PSIKOLOGI — Barrel Export
+export { default as PsychologistDashboard } from './PsychologistDashboard';
+export { default as BookingManagement } from './BookingManagement';
+export { default as BookingDetail } from './BookingDetail';
+export { default as ScheduleManagement } from './ScheduleManagement';
+export { default as PatientList } from './PatientList';
+export { default as PatientMedicalRecord } from './PatientMedicalRecord';
+export { default as MedicalRecords } from './MedicalRecords';
+export { default as AssessmentManagement } from './AssessmentManagement';
+export { default as AnalyticsTrends } from './AnalyticsTrends';
+export { default as ReferralManagement } from './ReferralManagement';
+export { default as PsychologistSettings } from './PsychologistSettings';
+export { default as NotificationsCenter } from './NotificationsCenter';
+export { default as AdminPsychologistList } from './AdminPsychologistList';
+export { default as AdminPsychologistDashboard } from './AdminPsychologistDashboard';
+export { default as AdminPsychologistBookings } from './AdminPsychologistBookings';
+export { default as AdminPsychologistMedicalRecords } from './AdminPsychologistMedicalRecords';
+export { default as AdminPsychologistReferrals } from './AdminPsychologistReferrals';
+export { default as FacultyPsikolog } from './FacultyPsikolog';

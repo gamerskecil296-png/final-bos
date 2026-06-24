@@ -1,0 +1,26 @@
+// Modul: ORMAWA — Barrel Export
+export { default as OrmawaDashboard } from './OrmawaDashboard';
+export { default as KelolaOrganisasi } from './KelolaOrganisasi';
+export { default as KategoriOrmawa } from './KategoriOrmawa';
+export { default as GamifikasiOrmawa } from './GamifikasiOrmawa';
+export { default as FinancialSettings } from './FinancialSettings';
+export { default as AnggotaManagement } from './AnggotaManagement';
+export { default as StaffManagement } from './StaffManagement';
+export { default as StrukturOrganisasi } from './StrukturOrganisasi';
+export { default as Recruitment } from './Recruitment';
+export { default as ProposalManagement } from './ProposalManagement';
+export { default as ProposalPipeline } from './ProposalPipeline';
+export { default as JadwalKegiatan } from './JadwalKegiatan';
+export { default as AbsensiKegiatan } from './AbsensiKegiatan';
+export { default as KeuanganKas } from './KeuanganKas';
+export { default as DetailMutasi } from './DetailMutasi';
+export { default as LpjManagement } from './LpjManagement';
+export { default as LpjPipeline } from './LpjPipeline';
+export { default as AspirationManagement } from './AspirationManagement';
+export { default as Pengumuman } from './Pengumuman';
+export { default as RoleBasedAccess } from './RoleBasedAccess';
+export { default as OrmawaSettings } from './OrmawaSettings';
+export { default as OrmawaNotifikasi } from './OrmawaNotifikasi';
+export { default as SuperAdminOrmawaDashboard } from './SuperAdminOrmawaDashboard';
+export { default as OrganisasiFakultas } from './OrganisasiFakultas';
+export { default as OrmawaProposals } from './OrmawaProposals';

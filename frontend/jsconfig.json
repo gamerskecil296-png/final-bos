@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/components/ui/*": ["./src/pages/FacultyAdmin/components/*"],
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"]
+}

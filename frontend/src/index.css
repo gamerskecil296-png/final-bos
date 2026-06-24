@@ -1,0 +1,429 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+:root {
+  /* ═══ BRAND COLORS UBK ═══ */
+  --theme-primary: #1B3A6B;         /* Navy utama UBK — BUKAN #2563EB */
+  --theme-primary-hover: #152F58;
+  --theme-primary-light: #1B3A6B1A; /* 10% opacity untuk bg subtle */
+  --theme-secondary: #C9A84C;       /* Gold UBK — BUKAN #EAB308 */
+  --theme-secondary-hover: #B8973E;
+  --theme-secondary-light: #C9A84C1A;
+  --theme-accent: #C9A84C;
+
+  /* BACKGROUND & SURFACE */
+  --theme-bg: #F8FAFC;                /* Background utama halaman (Light) */
+  --theme-surface: #FFFFFF;           /* Background card, modal, komponen */
+
+  /* WARNA TEKS */
+  --theme-text: #0F172A;              /* Teks utama/body paragraphs (Dark) */
+  --theme-text-muted: #64748B;        /* Teks subtitle, caption, keterangan */
+  --theme-text-subtle: #94A3B8;
+
+  /* WARNA HEADING */
+  --theme-h1: var(--theme-text);
+  --theme-h2: var(--theme-text);
+  --theme-h3: var(--theme-text);
+  --theme-h4: var(--theme-text-muted);
+
+  /* SIDEBAR */
+  --theme-sidebar-bg: var(--theme-primary);
+  --theme-sidebar-text: #FFFFFF;
+  --theme-sidebar-text-muted: rgba(255, 255, 255, 0.6);
+  --theme-sidebar-active-bg: rgba(255, 255, 255, 0.12);
+  --theme-sidebar-active-border: var(--theme-secondary);
+
+  /* BORDER */
+  --theme-border: #E2E8F0;             /* Border default */
+  --theme-border-muted: #F1F5F9;     /* Border subtle */
+
+  /* WARNA STATE (Semantic) */
+  --theme-success: #16A34A;
+  --theme-success-light: #16A34A1A;
+  --theme-warning: #D97706;
+  --theme-warning-light: #D977061A;
+  --theme-error: #DC2626;           /* BUKAN --theme-danger */
+  --theme-error-light: #DC26261A;
+  --theme-info: #0284C7;
+  --theme-info-light: #0284C71A;
+
+  /* RADIUS */
+  --radius-card: 1rem;         /* 16px — card, panel, page-header */
+  --radius-modal: 1rem;        /* 16px — dialog, drawer */
+  --radius-button: 0.75rem;    /* 12px — semua button */
+  --radius-input: 0.75rem;     /* 12px — input, select, textarea */
+  --radius-badge-status: 9999px; /* pill — badge status operasional */
+  --radius-badge-tag: 0.375rem;  /* 6px — badge tag/kategori */
+  --radius-icon-box: 0.5rem;   /* 8px — kotak ikon kecil */
+
+  /* DIMENSI */
+  --height-input: 2.5rem;        /* 40px — semua input, select */
+  --height-button-default: 2.5rem; /* 40px */
+  --height-button-sm: 2rem;       /* 32px — tombol aksi tabel */
+  --height-button-lg: 3rem;       /* 48px — CTA utama */
+  --sidebar-width: 15rem;         /* 240px */
+  --topnav-height: 3.5rem;        /* 56px */
+
+  /* FONTS */
+  --theme-font-headline: 'Plus Jakarta Sans', sans-serif;
+  --theme-font-body: 'Inter', sans-serif;
+}
+
+@theme {
+  /* === WARNA UTAMA (Bridging ke Tailwind) === */
+  --color-primary: var(--theme-primary);
+  --color-secondary: var(--theme-secondary);
+  --color-accent: var(--theme-accent);
+
+  /* === BACKGROUND & SURFACE === */
+  --color-background: var(--theme-bg);
+  --color-surface: var(--theme-surface);
+
+  /* === TEKS - SISTEM TERPUSAT === */
+  --color-on-surface: var(--theme-text);
+  --color-on-background: var(--theme-text);
+  --color-text-primary: var(--theme-text);
+  --color-text-muted: var(--theme-text-muted);
+
+  /* === HEADING === */
+  --color-heading: var(--theme-h1);
+  --color-heading-2: var(--theme-h2);
+  --color-heading-3: var(--theme-h3);
+
+  /* Aliases untuk backward compatibility */
+  --color-h1: var(--theme-h1);
+  --color-h2: var(--theme-h2);
+  --color-h3: var(--theme-h3);
+  --color-h4: var(--theme-h4);
+
+  /* === SIDEBAR === */
+  --color-sidebar-bg: var(--theme-sidebar-bg);
+  --color-sidebar-text: var(--theme-sidebar-text);
+  --color-sidebar-text-muted: var(--theme-sidebar-text-muted);
+
+  /* === MD3 Design Tokens === */
+  --primary: var(--theme-primary);
+  --on-primary: white;
+  --primary-container: var(--theme-primary);
+  --on-primary-container: white;
+  --primary-fixed: var(--theme-primary);
+  --on-primary-fixed: white;
+  --primary-fixed-dim: var(--theme-h3);
+
+  /* Secondary colors */
+  --secondary: var(--theme-secondary);
+  --on-secondary: var(--theme-h1);
+  --secondary-container: var(--theme-secondary);
+  --on-secondary-container: var(--theme-h1);
+
+  /* Tertiary/Accent colors */
+  --tertiary: var(--theme-accent);
+  --on-tertiary: var(--theme-h1);
+  --tertiary-container: var(--theme-accent);
+  --on-tertiary-container: var(--theme-h1);
+
+  /* Surface & Background */
+  --surface: var(--theme-surface);
+  --surface-dim: var(--theme-bg);
+  --surface-bright: white;
+  --surface-container: var(--theme-surface);
+  --surface-container-low: var(--theme-bg);
+  --surface-container-lowest: white;
+  --on-surface: var(--theme-text);
+  --on-surface-variant: var(--theme-text-muted);
+
+  /* Outline */
+  --outline: var(--theme-border);
+  --outline-variant: var(--theme-border-muted);
+
+  /* === BORDER === */
+  --color-border: var(--theme-border);
+  --color-border-muted: var(--theme-border-muted);
+
+  /* === STATE COLORS === */
+  --color-success: var(--theme-success);
+  --color-warning: var(--theme-warning);
+  --color-error: var(--theme-error);
+  --color-info: var(--theme-info);
+
+  /* BKU aliases for state colors */
+  --color-bku-success: var(--theme-success);
+  --color-bku-warning: var(--theme-warning);
+  --color-bku-danger: var(--theme-error);
+  --color-bku-info: var(--theme-info);
+
+  /* === BKU Aliases === */
+  --color-bku-primary: var(--theme-primary);
+  --color-bku-secondary: var(--theme-secondary);
+  --color-bku-accent: var(--theme-accent);
+  --color-bku-bg: var(--theme-bg);
+  --color-bku-surface: var(--theme-surface);
+  --color-bku-text: var(--theme-text);
+  --color-bku-text-muted: var(--theme-text-muted);
+  --color-bku-hover: var(--theme-primary);
+
+  /* === TEXT UTILITY CLASSES === */
+  --text-heading: var(--theme-h1);
+  --text-heading-2: var(--theme-h2);
+  --text-heading-3: var(--theme-h3);
+  --text-heading-4: var(--theme-h4);
+  --text-body: var(--theme-text);
+  --text-muted: var(--theme-text-muted);
+  --text-primary-theme: var(--theme-primary);
+  --text-on-dark: var(--theme-sidebar-text);
+  --text-on-dark-muted: var(--theme-sidebar-text-muted);
+
+  /* Static colors */
+  --color-bku-light: #FDE68A;
+  --color-bku-xlight: #EFF6FF;
+
+  /* === FONTS === */
+  --font-headline: var(--theme-font-headline);
+  --font-body: var(--theme-font-body);
+  --font-label: var(--theme-font-body);
+  --font-jakarta: var(--theme-font-headline);
+  --font-inter: var(--theme-font-body);
+
+  /* === RADIUS === */
+  --radius-xl: var(--radius-button);
+  --radius-2xl: var(--radius-card);
+}
+
+@layer base {
+  body {
+    @apply antialiased;
+    background-color: var(--theme-bg);
+    color: var(--theme-text);
+  }
+
+  /* ═══ HEADING HIERARCHY - Menggunakan CSS Variables untuk Tema ═══ */
+  h1, .h1 { color: var(--theme-h1); }
+  h2, .h2 { color: var(--theme-h2); }
+  h3, .h3 { color: var(--theme-h3); }
+  h4, h5, h6, .h4, .h5, .h6 { color: var(--theme-h4); }
+
+  /* Heading Utility Classes */
+  .heading { color: var(--theme-h1); }
+  .heading-primary { color: var(--theme-primary); }
+  .heading-2 { color: var(--theme-h2); }
+  .heading-3 { color: var(--theme-h3); }
+  .heading-4 { color: var(--theme-h4); }
+
+  /* Page Title Classes */
+  .page-title { color: var(--theme-h1); }
+  .page-title-2 { color: var(--theme-h2); }
+
+  /* ═══ SIDEBAR TEXT COLORS ═══ */
+  .sidebar-text { color: var(--theme-sidebar-text); }
+  .sidebar-text-muted { color: var(--theme-sidebar-text-muted, color-mix(in srgb, var(--theme-sidebar-text) 70%, transparent)); }
+
+  /* ═══ TEXT UTILITY CLASSES ═══ */
+  .text-body { color: var(--theme-text); }
+  .text-muted { color: var(--theme-text-muted); }
+  .text-caption { color: var(--theme-text-muted); }
+  .text-on-surface { color: var(--theme-text); }
+  .text-on-background { color: var(--theme-text); }
+  .text-on-dark { color: var(--theme-sidebar-text); }
+  .text-on-dark-muted { color: var(--theme-sidebar-text-muted, color-mix(in srgb, var(--theme-sidebar-text) 70%, transparent)); }
+
+  /* ═══ MENU & NAVIGATION TEXT ═══ */
+  .menu-text { color: var(--theme-text); }
+  .menu-text-active { color: var(--theme-primary); }
+  .menu-text-muted { color: var(--theme-text-muted); }
+
+  /* ═══ COMPONENT TEXT COLORS ═══ */
+  .card-title { color: var(--theme-text); }
+  .card-subtitle { color: var(--theme-text-muted); }
+  .label-text { color: var(--theme-text-muted); }
+  .badge-text { color: var(--theme-text-muted); }
+
+  /* ═══ LINK COLORS ═══ */
+  a, .link {
+    color: var(--theme-primary);
+  }
+  a:hover {
+    opacity: 0.8;
+  }
+
+  /* ═══ BUTTON & INPUT BASE ═══ */
+  button {
+    font-family: var(--theme-font-body);
+  }
+  input, textarea, select {
+    font-family: var(--theme-font-body);
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══ UTILITY CLASSES ═══ */
+@utility academic-blur {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@utility tonal-layering {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+}
+
+@utility glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+@utility hero-bg-overlay {
+  background: linear-gradient(to right, var(--theme-primary), var(--theme-primary)), linear-gradient(to bottom, transparent, var(--theme-primary));
+}
+
+@utility academic-gradient {
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-h3) 100%);
+}
+
+@utility glass-effect {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@utility hover-scale {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.1);
+  }
+}
+
+/* ═══ CUSTOM SCROLLBAR - Blue Theme ═══ */
+*:not(.no-scrollbar)::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*:not(.no-scrollbar)::-webkit-scrollbar-track {
+  background: transparent;
+}
+*:not(.no-scrollbar)::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--theme-primary) 30%, transparent);
+  border-radius: 99px;
+}
+*:not(.no-scrollbar)::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--theme-primary) 50%, transparent);
+}
+
+/* ═══ SELECTED TEXT - Blue Theme ═══ */
+::selection {
+  background-color: var(--theme-primary);
+  color: white;
+}
+
+::-moz-selection {
+  background-color: var(--theme-primary);
+  color: white;
+}
+
+/* ═══ FOCUS STATES - Blue Theme ═══ */
+:focus-visible {
+  outline: 2px solid var(--theme-primary);
+  outline-offset: 2px;
+}
+
+/* ═══ LOADING ANIMATIONS ═══ */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+  50% { opacity: .5; }
+}
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ═══ TRANSITIONS ═══ */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* ═══ CUSTOM COLOR PICKER INPUTS ═══ */
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+input[type="color"]::-webkit-color-swatch {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* ═══ NO SCROLLBAR UTILITY ═══ */
+@utility no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  &::-webkit-scrollbar-thumb {
+    display: none !important;
+    background: transparent !important;
+  }
+  &::-webkit-scrollbar-track {
+    display: none !important;
+    background: transparent !important;
+  }
+}
+
+/* ═══ FORCE MATERIAL SYMBOLS FONT ═══ */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined' !important;
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+}
+/* ═══ QUILL TOOLTIP FIXES ═══ */
+.ql-snow .ql-tooltip {
+  z-index: 50 !important;
+  margin-left: 10px !important;
+}
+
+.ql-snow .ql-tooltip input[type="text"] {
+  border: 1px solid var(--theme-border-muted) !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  margin-right: 8px !important;
+  width: 200px !important;
+}
