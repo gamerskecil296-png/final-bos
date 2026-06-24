@@ -213,7 +213,7 @@ function SwitcherDropdown({ icon, label, value, options, onChange, colorScheme =
         </span>
       </button>
 
-      {open && ReactDOM.createPortal(dropdownContent, document.body)}
+      {open && dropdownContent}
     </div>
 
   );
@@ -228,6 +228,9 @@ export default function PortalTopbar({ config, onMenuClick }) {
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
+
+  const roleStr = user?.role ? user.role.toLowerCase() : '';
+  const isSuperAdmin = roleStr.includes('super') && roleStr.includes('admin');
 
   // Search Palette State
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -260,7 +263,7 @@ export default function PortalTopbar({ config, onMenuClick }) {
   );
 
   useEffect(() => {
-    if (user?.role === 'super_admin') {
+    if (isSuperAdmin) {
       fetchWithAuth('/api/admin/fakultas')
         .then(data => {
           if (data.status === 'success' && data.data) {
@@ -318,7 +321,7 @@ export default function PortalTopbar({ config, onMenuClick }) {
   }, [user]);
 
   useEffect(() => {
-    if (user?.role === 'super_admin') {
+    if (isSuperAdmin) {
       fetchWithAuth('/api/admin/prodi')
         .then(res => {
           if (res.status === 'success' && res.data) {
@@ -611,7 +614,7 @@ export default function PortalTopbar({ config, onMenuClick }) {
           {/* Menu Toggle */}
 
           {/* Divider */}
-          {user?.role === 'super_admin' && (
+          {isSuperAdmin && (
             <div className="hidden md:block w-px h-5 bg-slate-200 mx-1 shrink-0" />
           )}
 
@@ -619,7 +622,7 @@ export default function PortalTopbar({ config, onMenuClick }) {
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
 
             {/* Faculty Switcher */}
-            {user?.role === 'super_admin' && facultiesList.length > 0 && !isSpecialPage && (
+            {!isSpecialPage && (
               <SwitcherDropdown
                 icon="corporate_fare"
                 label="Fakultas"
@@ -632,7 +635,7 @@ export default function PortalTopbar({ config, onMenuClick }) {
             )}
 
             {/* Prodi Switcher */}
-            {user?.role === 'super_admin' && activeFacultyId !== 'all' && prodisList.length > 0 && !isSpecialPage && (
+            {activeFacultyId !== 'all' && !isSpecialPage && (
               <SwitcherDropdown
                 icon="school"
                 label="Prodi"
@@ -645,7 +648,7 @@ export default function PortalTopbar({ config, onMenuClick }) {
             )}
 
             {/* Period Switcher */}
-            {user?.role === 'super_admin' && periodsList.length > 0 && !isSpecialPage && (
+            {!isSpecialPage && (
               <SwitcherDropdown
                 icon="calendar_month"
                 label="Periode"
@@ -658,7 +661,7 @@ export default function PortalTopbar({ config, onMenuClick }) {
             )}
 
             {/* Reset Filter */}
-            {user?.role === 'super_admin' && hasActiveFilter && !isSpecialPage && (
+            {isSuperAdmin && hasActiveFilter && !isSpecialPage && (
               <button
                 onClick={handleResetFilters}
                 title="Reset semua filter"
@@ -670,7 +673,7 @@ export default function PortalTopbar({ config, onMenuClick }) {
             )}
 
             {/* Ormawa Switcher — for Ormawa pages */}
-            {user?.role === 'super_admin' && ormawasList.length > 0 && isOrmawaPage && (
+            {isSuperAdmin && isOrmawaPage && (
               <SwitcherDropdown
                 icon="groups"
                 label="Pilih Ormawa"

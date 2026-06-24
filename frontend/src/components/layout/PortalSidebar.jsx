@@ -113,21 +113,26 @@ export default function PortalSidebar({ config, onNavigate }) {
 
   const { hasPermission } = usePermission();
 
-  const filteredMenu = (config.menu || []).map(group => {
-    const filteredItems = (group.items || [])
-      .map(item => {
-        if (item.hasSubmenu && item.submenu) {
-          const filteredSubmenu = item.submenu.filter(sub => hasPermission(sub.permission));
-          return { ...item, submenu: filteredSubmenu };
-        }
-        return item;
-      })
-      .filter(item => {
-        if (item.hasSubmenu && (!item.submenu || item.submenu.length === 0)) return false;
-        return hasPermission(item.permission);
-      });
-    return { ...group, items: filteredItems };
-  }).filter(group => group.items.length > 0);
+  const roleStr = user?.role ? user.role.toLowerCase() : '';
+  const isSuperAdmin = roleStr.includes('super') && roleStr.includes('admin');
+
+  const filteredMenu = (config.menu || [])
+    .filter(group => !(isSuperAdmin && group.module === 'student'))
+    .map(group => {
+      const filteredItems = (group.items || [])
+        .map(item => {
+          if (item.hasSubmenu && item.submenu) {
+            const filteredSubmenu = item.submenu.filter(sub => hasPermission(sub.permission));
+            return { ...item, submenu: filteredSubmenu };
+          }
+          return item;
+        })
+        .filter(item => {
+          if (item.hasSubmenu && (!item.submenu || item.submenu.length === 0)) return false;
+          return hasPermission(item.permission);
+        });
+      return { ...group, items: filteredItems };
+    }).filter(group => group.items.length > 0);
 
   return (
     <aside

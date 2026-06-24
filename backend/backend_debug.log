@@ -12,3 +12,9 @@
 [GetMembers] URI: /api/ormawa/members?ormawaId=4, ormawaId: 4, periode: , role: super_admin, isSuperAdmin: true, X-Ormawa-ID: 4
 [GetMembers] URI: /api/ormawa/members?ormawaId=4, ormawaId: 4, periode: , role: super_admin, isSuperAdmin: true, X-Ormawa-ID: 4
 [GetMembers] URI: /api/ormawa/members?ormawaId=null, ormawaId: 4, periode: , role: super_admin, isSuperAdmin: true, X-Ormawa-ID: 4
+[GetMembers] URI: /api/ormawa/members?ormawaId=null, ormawaId: 7, periode: , role: super_admin, isSuperAdmin: true, X-Ormawa-ID: 7
+[GetMembers] URI: /api/ormawa/members?ormawaId=null, ormawaId: 7, periode: , role: super_admin, isSuperAdmin: true, X-Ormawa-ID: 7
+[GetMembers] URI: /api/ormawa/members?ormawaId=null&periode=aktif, ormawaId: 7, periode: aktif, role: super_admin, isSuperAdmin: true, X-Ormawa-ID: 7
+[GetMembers] URI: /api/ormawa/members?ormawaId=null&periode=aktif, ormawaId: 7, periode: aktif, role: super_admin, isSuperAdmin: true, X-Ormawa-ID: 7
+[GetMembers] URI: /api/ormawa/members?ormawaId=null, ormawaId: 7, periode: , role: super_admin, isSuperAdmin: true, X-Ormawa-ID: 7
+[GetMembers] URI: /api/ormawa/members?ormawaId=null, ormawaId: 7, periode: , role: super_admin, isSuperAdmin: true, X-Ormawa-ID: 7

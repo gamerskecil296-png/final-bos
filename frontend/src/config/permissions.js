@@ -456,6 +456,7 @@ export const PERMISSION_MIGRATION = Object.freeze({
   'student.voice.view':        P.STUDENT_VOICE_VIEW,
 
   // Old system format
+  'admin.full_access':         '*',
   'admin.profile.view':        P.PROFILE_VIEW,
   'admin.profile.update':      P.PROFILE_UPDATE,
   'rbac.roles.view':           P.RBAC_ROLES_VIEW,

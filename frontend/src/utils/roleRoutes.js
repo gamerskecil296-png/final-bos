@@ -1,16 +1,17 @@
 export const getRouteByRole = (role, permissions = []) => {
   const r = String(role || '').toLowerCase().trim();
+  const userRoles = r.split(',').map(x => x.trim());
   const userPermissions = permissions || [];
 
   // All roles now go to /app/* — DynamicLayout handles sidebar/layout by permission
-  if (r === 'super_admin' || r === 'superadmin') return '/app/dashboard';
-  if (r === 'kencana_admin') return '/app/kencana/dashboard';
-  if (r === 'kencana_fakultas') return '/app/kencana/faculty-stages';
-  if (r === 'kencana_mentor') return '/app/kencana/mentor';
-  if (r === 'faculty_admin' || r === 'prodi_admin' || r === 'dosen') return '/app/dashboard';
-  if (r === 'ormawa_admin' || r === 'ormawa') return '/app/ormawa/dashboard';
-  if (r === 'psikolog' || r === 'psychologist') return '/app/psikologi/dashboard';
-  if (r === 'tenaga_kesehatan' || r === 'tenagakes' || r === 'medis') return '/app/kesehatan/dashboard';
+  if (userRoles.includes('super_admin') || userRoles.includes('superadmin')) return '/app/dashboard';
+  if (userRoles.includes('kencana_admin')) return '/app/kencana/dashboard';
+  if (userRoles.includes('kencana_fakultas')) return '/app/kencana/faculty-stages';
+  if (userRoles.includes('kencana_mentor')) return '/app/kencana/mentor';
+  if (userRoles.includes('faculty_admin') || userRoles.includes('prodi_admin') || userRoles.includes('dosen')) return '/app/dashboard';
+  if (userRoles.includes('ormawa_admin') || userRoles.includes('ormawa')) return '/app/ormawa/dashboard';
+  if (userRoles.includes('psikolog') || userRoles.includes('psychologist')) return '/app/psikologi/dashboard';
+  if (userRoles.includes('tenaga_kesehatan') || userRoles.includes('tenagakes') || userRoles.includes('medis')) return '/app/kesehatan/dashboard';
 
   // Permission-based fallbacks
   const superAdminPerms = ['admin.', 'rbac.', 'system.', 'system_'];
@@ -42,10 +43,10 @@ export const getRouteByRole = (role, permissions = []) => {
   if (userPermissions.some(p => ['ormawa.core.view', 'ormawa.dashboard.view', 'ormawa.view', 'view_dashboard'].includes(p))) {
     return '/app/ormawa/dashboard';
   }
-  if (userPermissions.some(p => ['psychologist.dashboard.view', 'counseling.dashboard.view'].includes(p))) {
+  if (userPermissions.some(p => ['psychologist.dashboard.view', 'counseling.dashboard.view'].includes(p) || p.startsWith('psychologist.'))) {
     return '/app/psikologi/dashboard';
   }
-  if (userPermissions.some(p => ['health.dashboard.view', 'health_claims.view', 'tenagakes.dashboard.view'].includes(p))) {
+  if (userPermissions.some(p => ['health.dashboard.view', 'health_claims.view', 'tenagakes.dashboard.view'].includes(p) || p.startsWith('health.') || p.startsWith('klinik.') || p.startsWith('tenagakes.'))) {
     return '/app/kesehatan/dashboard';
   }
 

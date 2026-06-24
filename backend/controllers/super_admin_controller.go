@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"siakad-backend/config"
 	"siakad-backend/controllers/psychologist"
+	"siakad-backend/middleware"
 	"siakad-backend/models"
 	"siakad-backend/pkg/gamifikasi"
 	"siakad-backend/pkg/notifikasi"
@@ -66,7 +67,7 @@ var rbacPermissionCatalog = []fiber.Map{
 		"faculty.aspiration.view", "faculty.aspiration.update", "faculty.aspiration.delete",
 	}},
 	{"module": "Ormawa", "items": []string{
-		"ormawa.core.view",
+		"ormawa.core.view", "ormawa.view", "ormawa.kategori.view", "ormawa.kategori.manage",
 		"ormawa.structure.view", "ormawa.structure.manage",
 		"ormawa.members.view", "ormawa.members.create", "ormawa.members.update", "ormawa.members.delete",
 		"ormawa.events.view", "ormawa.events.create", "ormawa.events.update", "ormawa.events.delete",
@@ -995,6 +996,31 @@ func CreateUser(c *fiber.Ctx) error {
 
 	if !isAllowedRBACRole(req.Role) {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Role tidak valid"})
+	}
+
+	userRole, ok := c.Locals("role").(string)
+	if !ok {
+		userRole = ""
+	}
+	permissions, ok := c.Locals("permissions").([]string)
+	if !ok {
+		permissions = []string{}
+	}
+
+	roleLowerStr := "," + strings.ToLower(req.Role) + ","
+	
+	if !middleware.HasPermission(userRole, permissions, "rbac.users.create") {
+		if strings.Contains(roleLowerStr, ",psikolog,") {
+			if !middleware.HasPermission(userRole, permissions, "psychologist.core.create") {
+				return c.Status(403).JSON(fiber.Map{"status": "error", "message": "Akses ditolak. Anda tidak memiliki izin untuk membuat Psikolog."})
+			}
+		} else if strings.Contains(roleLowerStr, ",tenagakes,") {
+			if !middleware.HasPermission(userRole, permissions, "health.core.create") {
+				return c.Status(403).JSON(fiber.Map{"status": "error", "message": "Akses ditolak. Anda tidak memiliki izin untuk membuat Tenaga Kesehatan."})
+			}
+		} else {
+			return c.Status(403).JSON(fiber.Map{"status": "error", "message": "Akses ditolak. Anda tidak memiliki izin untuk membuat User."})
+		}
 	}
 
 	newRoles := strings.Split(req.Role, ",")

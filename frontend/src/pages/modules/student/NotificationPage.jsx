@@ -45,8 +45,6 @@ export default function NotificationPage() {
   const user = useAuthStore(state => state.user);
   const navigate = useNavigate();
 
-
-
   const queryClient = useQueryClient();
   const [filterType, setFilterType] = useState('Semua');
   const [filterTime, setFilterTime] = useState('semua'); // hari_ini, minggu_ini, bulan_ini, semua
@@ -180,7 +178,7 @@ export default function NotificationPage() {
         subtitle={`Kamu memiliki ${notifData?.filter(n => !n.is_read).length || 0} pesan belum dibaca yang menunggu.`}
         icon="notifications_active"
         breadcrumbs={[
-          { label: 'Student Hub', path: '/student' },
+          { label: user?.role === 'super_admin' ? 'Dashboard' : 'Student Hub', path: user?.role === 'super_admin' ? '/app/dashboard' : '/app/student/dashboard' },
           { label: 'Notifikasi' }
         ]}
         actions={

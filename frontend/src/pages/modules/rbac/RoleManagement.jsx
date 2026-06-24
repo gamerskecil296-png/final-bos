@@ -41,138 +41,138 @@ const getFeatureLabel = (prefix) => {
     // ═══════════════════════════════════════════════════════
     // MODULE: Sistem & Konfigurasi
     // ═══════════════════════════════════════════════════════
-    "admin":              "Akses Penuh (Super Admin)",
-    "admin.dashboard":    "Dashboard Admin",
-    "admin.profile":      "Profil Admin",
-    "admin.audit":        "Log & Audit Trail",
-    "rbac.roles":         "Manajemen Role & Hak Akses",
-    "rbac.users":         "Manajemen Pengguna (RBAC)",
-    "system.pmb":         "PMB (Penerimaan Mahasiswa Baru)",
-    "system.database":    "⛔ Database Sistem (Danger Zone)",
-    "system.docs":        "Dokumentasi Sistem",
-    "system.news":        "Berita & Pengumuman Sistem",
-    "system.landing":     "Pengaturan Landing Page",
-    "system.theme":       "Pengaturan Tampilan & Tema",
-    "system_settings":    "Konfigurasi Umum Sistem",
-    "system.document":    "Format & Template Surat",
-    "system.finance":     "Pagu & Keuangan Sistem",
-    "system.insurance":   "Pengaturan Asuransi",
-    "system.category":    "Kategori Organisasi",
+    "admin": "Akses Penuh (Super Admin)",
+    "admin.dashboard": "Dashboard Admin",
+    "admin.profile": "Profil Admin",
+    "admin.audit": "Log & Audit Trail",
+    "rbac.roles": "Manajemen Role & Hak Akses",
+    "rbac.users": "Manajemen Pengguna (RBAC)",
+    "system.pmb": "PMB (Penerimaan Mahasiswa Baru)",
+    "system.database": "⛔ Database Sistem (Danger Zone)",
+    "system.docs": "Dokumentasi Sistem",
+    "system.news": "Berita & Pengumuman Sistem",
+    "system.landing": "Pengaturan Landing Page",
+    "system.theme": "Pengaturan Tampilan & Tema",
+    "system_settings": "Konfigurasi Umum Sistem",
+    "system.document": "Format & Template Surat",
+    "system.finance": "Pagu & Keuangan Sistem",
+    "system.insurance": "Pengaturan Asuransi",
+    "system.category": "Kategori Organisasi",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Akademik & Fakultas
     // ═══════════════════════════════════════════════════════
-    "faculty.dashboard":  "Dashboard Fakultas",
-    "students":           "Data Mahasiswa (Master)",
-    "faculty":            "Data Fakultas (Master)",
-    "program_studi":      "Data Program Studi (Master)",
-    "dosen":              "Data Dosen (Master)",
-    "akademik":           "Periode Akademik",
-    "faculty_report":     "Laporan Fakultas",
-    "faculty_profile":    "Profil Fakultas",
-    "prodi_users":        "Akun Pengguna Prodi",
-    "faculty_settings":   "Pengaturan Fakultas",
-    "faculty_rbac":       "Role & Akses Fakultas (RBAC)",
+    "faculty.dashboard": "Dashboard Fakultas",
+    "students": "Data Mahasiswa (Master)",
+    "faculty": "Data Fakultas (Master)",
+    "program_studi": "Data Program Studi (Master)",
+    "dosen": "Data Dosen (Master)",
+    "akademik": "Periode Akademik",
+    "faculty_report": "Laporan Fakultas",
+    "faculty_profile": "Profil Fakultas",
+    "prodi_users": "Akun Pengguna Prodi",
+    "faculty_settings": "Pengaturan Fakultas",
+    "faculty_rbac": "Role & Akses Fakultas (RBAC)",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Kemahasiswaan
     // ═══════════════════════════════════════════════════════
-    "scholarship":            "Beasiswa (Kelola Admin)",
-    "achievement":            "Prestasi (Kelola Admin)",
-    "aspiration":             "Aspirasi (Kelola Admin)",
-    "faculty.scholarship":    "Beasiswa (Monitor Fakultas)",
-    "faculty.achievement":    "Prestasi (Monitor Fakultas)",
-    "faculty.aspiration":     "Aspirasi (Monitor Fakultas)",
+    "scholarship": "Beasiswa (Kelola Admin)",
+    "achievement": "Prestasi (Kelola Admin)",
+    "aspiration": "Aspirasi (Kelola Admin)",
+    "faculty.scholarship": "Beasiswa (Monitor Fakultas)",
+    "faculty.achievement": "Prestasi (Monitor Fakultas)",
+    "faculty.aspiration": "Aspirasi (Monitor Fakultas)",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Ormawa
     // ═══════════════════════════════════════════════════════
-    "ormawa.core":            "Dashboard Ormawa",
-    "ormawa.structure":       "Struktur Organisasi Ormawa",
-    "ormawa.members":         "Anggota & Pengurus Ormawa",
-    "ormawa.events":          "Kegiatan & Kalender Ormawa",
-    "ormawa.attendance":      "Absensi Kegiatan Ormawa",
-    "ormawa.finance":         "Keuangan Kas Ormawa",
-    "ormawa.proposals":       "Proposal Kegiatan Ormawa",
-    "ormawa.lpj":             "Laporan LPJ Ormawa",
-    "ormawa.announcements":   "Pengumuman Ormawa",
-    "ormawa.aspirations":     "Aspirasi & Pengaduan Ormawa",
-    "ormawa.recruitment":     "Open Recruitment Ormawa",
-    "ormawa.notifications":   "Notifikasi Ormawa",
-    "ormawa.kencana":         "PKKMB / Kencana Ormawa",
-    "ormawa.rbac":            "Role & Akses Ormawa (RBAC)",
-    "ormawa.settings":        "Pengaturan Ormawa",
-    "ormawa.gamifikasi":      "Gamifikasi & Poin Ormawa",
-    "ormawa.pagu":            "Pagu Keuangan Ormawa",
-    "faculty_ormawa":         "Ormawa (Monitor Fakultas)",
-    "faculty_proposal":       "Proposal Ormawa (Monitor Fakultas)",
+    "ormawa.core": "Dashboard Ormawa",
+    "ormawa.structure": "Struktur Organisasi Ormawa",
+    "ormawa.members": "Anggota & Pengurus Ormawa",
+    "ormawa.events": "Kegiatan & Kalender Ormawa",
+    "ormawa.attendance": "Absensi Kegiatan Ormawa",
+    "ormawa.finance": "Keuangan Kas Ormawa",
+    "ormawa.proposals": "Proposal Kegiatan Ormawa",
+    "ormawa.lpj": "Laporan LPJ Ormawa",
+    "ormawa.announcements": "Pengumuman Ormawa",
+    "ormawa.aspirations": "Aspirasi & Pengaduan Ormawa",
+    "ormawa.recruitment": "Open Recruitment Ormawa",
+    "ormawa.notifications": "Notifikasi Ormawa",
+    "ormawa.kencana": "PKKMB / Kencana Ormawa",
+    "ormawa.rbac": "Role & Akses Ormawa (RBAC)",
+    "ormawa.settings": "Pengaturan Ormawa",
+    "ormawa.gamifikasi": "Gamifikasi & Poin Ormawa",
+    "ormawa.pagu": "Pagu Keuangan Ormawa",
+    "faculty_ormawa": "Ormawa (Monitor Fakultas)",
+    "faculty_proposal": "Proposal Ormawa (Monitor Fakultas)",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Klinik & Psikologi
     // ═══════════════════════════════════════════════════════
-    "psychologist.dashboard":       "Dashboard Psikolog",
-    "psychologist.patients":        "Data Pasien (Psikolog)",
-    "psychologist.bookings":        "Jadwal Konseling (Psikolog)",
+    "psychologist.dashboard": "Dashboard Psikolog",
+    "psychologist.patients": "Data Pasien (Psikolog)",
+    "psychologist.bookings": "Jadwal Konseling (Psikolog)",
     "psychologist.medical_records": "Rekam Medis (Psikolog)",
-    "psychologist.referrals":       "Rujukan (Psikolog)",
-    "psychologist.schedules":       "Jadwal Praktik (Psikolog)",
-    "psychologist.reports":         "Laporan (Psikolog)",
-    "psychologist.notifications":   "Notifikasi (Psikolog)",
-    "psychologist.settings":        "Pengaturan (Psikolog)",
-    "health.dashboard":             "Dashboard Klinik Kesehatan",
-    "health.bookings":              "Jadwal Kunjungan (Klinik)",
-    "health.schedules":             "Jadwal Praktik (Klinik)",
-    "health.patients":              "Data Pasien (Klinik)",
-    "health.medical_records":       "Rekam Medis (Klinik)",
-    "health.bap":                   "Berita Acara Pemeriksaan (Klinik)",
-    "health.reports":               "Laporan (Klinik)",
-    "health_claims":                "Klaim Asuransi Kesehatan",
-    "faculty_health":               "Kesehatan (Monitor Fakultas)",
-    "faculty.counseling":           "Data Konseling (Monitor Fakultas)",
+    "psychologist.referrals": "Rujukan (Psikolog)",
+    "psychologist.schedules": "Jadwal Praktik (Psikolog)",
+    "psychologist.reports": "Laporan (Psikolog)",
+    "psychologist.notifications": "Notifikasi (Psikolog)",
+    "psychologist.settings": "Pengaturan (Psikolog)",
+    "health.dashboard": "Dashboard Klinik Kesehatan",
+    "health.bookings": "Jadwal Kunjungan (Klinik)",
+    "health.schedules": "Jadwal Praktik (Klinik)",
+    "health.patients": "Data Pasien (Klinik)",
+    "health.medical_records": "Rekam Medis (Klinik)",
+    "health.bap": "Berita Acara Pemeriksaan (Klinik)",
+    "health.reports": "Laporan (Klinik)",
+    "health_claims": "Klaim Asuransi Kesehatan",
+    "faculty_health": "Kesehatan (Monitor Fakultas)",
+    "faculty.counseling": "Data Konseling (Monitor Fakultas)",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Kencana (PKKMB)
     // ═══════════════════════════════════════════════════════
-    "kencana.dashboard":        "Dashboard Kencana",
-    "kencana.announcement":     "Pengumuman Kencana",
-    "kencana.timeline":         "Timeline Kegiatan Kencana",
-    "kencana.pre_kencana":      "Pra-Kencana (Persiapan)",
-    "kencana.university":       "Kencana Tingkat Universitas",
-    "kencana.faculty_stages":   "Kencana Tingkat Fakultas",
-    "kencana.score_summary":    "Rekap Nilai Kencana",
-    "kencana.scores":           "Penilaian Kencana",
-    "kencana.banding":          "Banding Nilai Kencana",
-    "kencana.remedials":        "Remedial Kencana",
-    "kencana.certificates":     "Sertifikat Kencana",
-    "kencana.participants":     "Data Peserta Kencana",
-    "kencana.groups":           "Kelompok Kencana",
-    "kencana.mentors":          "Data Mentor Kencana",
-    "kencana.mentor":           "Portal Mentor Kencana",
-    "kencana.attendance":       "Kehadiran Kencana",
-    "kencana.handbook":         "Buku Panduan Kencana",
-    "kencana.notifications":    "Notifikasi Kencana",
-    "kencana.settings":         "Pengaturan Kencana",
-    "kencana.faculty":          "Monitor Kencana (Fakultas)",
+    "kencana.dashboard": "Dashboard Kencana",
+    "kencana.announcement": "Pengumuman Kencana",
+    "kencana.timeline": "Timeline Kegiatan Kencana",
+    "kencana.pre_kencana": "Pra-Kencana (Persiapan)",
+    "kencana.university": "Kencana Tingkat Universitas",
+    "kencana.faculty_stages": "Kencana Tingkat Fakultas",
+    "kencana.score_summary": "Rekap Nilai Kencana",
+    "kencana.scores": "Penilaian Kencana",
+    "kencana.banding": "Banding Nilai Kencana",
+    "kencana.remedials": "Remedial Kencana",
+    "kencana.certificates": "Sertifikat Kencana",
+    "kencana.participants": "Data Peserta Kencana",
+    "kencana.groups": "Kelompok Kencana",
+    "kencana.mentors": "Data Mentor Kencana",
+    "kencana.mentor": "Portal Mentor Kencana",
+    "kencana.attendance": "Kehadiran Kencana",
+    "kencana.handbook": "Buku Panduan Kencana",
+    "kencana.notifications": "Notifikasi Kencana",
+    "kencana.settings": "Pengaturan Kencana",
+    "kencana.faculty": "Monitor Kencana (Fakultas)",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Portal Mahasiswa
     // ═══════════════════════════════════════════════════════
-    "student.dashboard":        "Dashboard Mahasiswa",
-    "student.profile":          "Profil Mahasiswa",
-    "student.kencana":          "Kencana PKKMB (Mahasiswa)",
-    "student_kencana":          "Kencana PKKMB (Mahasiswa)",
-    "student.achievement":      "Prestasi (Akses Mahasiswa)",
-    "student.organisasi":       "Organisasi (Akses Mahasiswa)",
-    "student.organizations":    "Organisasi (Akses Mahasiswa)",
-    "student.health":           "Kesehatan (Akses Mahasiswa)",
-    "student.health.records":   "Rekam Medis (Akses Mahasiswa)",
-    "student.health.bookings":  "Jadwal Kunjungan (Akses Mahasiswa)",
-    "student.counseling":       "Konseling (Akses Mahasiswa)",
-    "student.scholarship":      "Beasiswa (Akses Mahasiswa)",
-    "student.voice":            "Aspirasi (Akses Mahasiswa)",
-    "student.aspirations":      "Aspirasi (Akses Mahasiswa)",
-    "student.insurance":        "Asuransi (Akses Mahasiswa)",
-    "student.presensi":         "Presensi Kegiatan (Akses Mahasiswa)",
+    "student.dashboard": "Dashboard Mahasiswa",
+    "student.profile": "Profil Mahasiswa",
+    "student.kencana": "Kencana PKKMB (Mahasiswa)",
+    "student_kencana": "Kencana PKKMB (Mahasiswa)",
+    "student.achievement": "Prestasi (Akses Mahasiswa)",
+    "student.organisasi": "Organisasi (Akses Mahasiswa)",
+    "student.organizations": "Organisasi (Akses Mahasiswa)",
+    "student.health": "Kesehatan (Akses Mahasiswa)",
+    "student.health.records": "Rekam Medis (Akses Mahasiswa)",
+    "student.health.bookings": "Jadwal Kunjungan (Akses Mahasiswa)",
+    "student.counseling": "Konseling (Akses Mahasiswa)",
+    "student.scholarship": "Beasiswa (Akses Mahasiswa)",
+    "student.voice": "Aspirasi (Akses Mahasiswa)",
+    "student.aspirations": "Aspirasi (Akses Mahasiswa)",
+    "student.insurance": "Asuransi (Akses Mahasiswa)",
+    "student.presensi": "Presensi Kegiatan (Akses Mahasiswa)",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Integrasi & Sinkronisasi
@@ -240,14 +240,14 @@ export default function RoleManagement() {
       if (roleRes?.status === 'success') {
         const payload = roleRes.data || {};
         setRoles(payload.roles || []);
-        
+
         // MIGRATION: Translate the backend catalog to use the new permission keys
         const rawCatalog = payload.catalog || [];
         const migratedCatalog = rawCatalog.map(module => ({
           ...module,
           items: [...new Set(module.items.map(p => migratePermission(p)))]
         }));
-        
+
         setPermissionCatalog(migratedCatalog);
         if (migratedCatalog.length > 0 && !activeTab) {
           setActiveTab(migratedCatalog[0].module);
@@ -282,7 +282,7 @@ export default function RoleManagement() {
     setFormName(role.key || '');
     setFormLabel(role.label || '');
     setFormDesc(role.description || '');
-    
+
     // MIGRATION: Translate legacy permissions from DB so checkboxes appear checked
     const rawPerms = Array.isArray(role.permissions) ? role.permissions : [];
     const migratedPerms = rawPerms.map(p => migratePermission(p));
@@ -295,6 +295,10 @@ export default function RoleManagement() {
   const handleSave = async () => {
     if (!formName.trim() || !formLabel.trim()) {
       toast.error('Nama dan Label harus diisi');
+      return;
+    }
+    if (formPermissions.length === 0) {
+      toast.error('Minimal harus memilih satu hak akses (permission)');
       return;
     }
     setIsSubmitting(true);
@@ -348,9 +352,57 @@ export default function RoleManagement() {
   };
 
   const togglePermission = (perm) => {
-    setFormPermissions(prev =>
-      prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]
-    );
+    setFormPermissions(prev => {
+      const isChecking = !prev.includes(perm);
+      const lastDot = perm.lastIndexOf('.');
+      let prefix = perm;
+      let suffix = '';
+
+      if (lastDot !== -1) {
+        prefix = perm.substring(0, lastDot);
+        suffix = perm.substring(lastDot + 1);
+      } else {
+        // Fallback for permissions without dots
+        const parts = perm.split('_');
+        if (parts.length > 1) {
+          suffix = parts.pop();
+          prefix = parts.join('_');
+        }
+      }
+
+      if (isChecking) {
+        const newSet = new Set(prev);
+        newSet.add(perm);
+
+        // If checking a non-view permission (create, update, delete), auto-check 'view'
+        if (suffix !== 'view' && prefix) {
+          const viewPerm = perm.includes('.') ? `${prefix}.view` : `${prefix}_view`;
+          newSet.add(viewPerm);
+        }
+        return Array.from(newSet);
+      } else {
+        let newArray = prev.filter(p => p !== perm);
+
+        // If unchecking 'view', auto-uncheck all actions under the same prefix
+        if (suffix === 'view' && prefix) {
+          newArray = newArray.filter(p => {
+            const pLastDot = p.lastIndexOf('.');
+            let pPrefix = p;
+            if (pLastDot !== -1) {
+              pPrefix = p.substring(0, pLastDot);
+            } else {
+              const pParts = p.split('_');
+              if (pParts.length > 1) {
+                pParts.pop();
+                pPrefix = pParts.join('_');
+              }
+            }
+            return pPrefix !== prefix;
+          });
+        }
+        return newArray;
+      }
+    });
   };
 
   const filteredCatalog = useMemo(() => {

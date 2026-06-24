@@ -39,7 +39,7 @@ export default function DynamicLayout() {
   }, [isAuthenticated, updateUser, location.pathname]);
 
   // Build filtered menu based on user permissions
-  const filteredMenu = getFilteredMenu(hasPermission);
+  const filteredMenu = getFilteredMenu(hasPermission, isSuperAdmin);
 
   // Build config object compatible with PortalTopbar
   const branding = PORTAL_BRANDING.default;

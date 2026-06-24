@@ -29,11 +29,11 @@ func SetupPsychologistRoutes(app *fiber.App) {
 	api.Put("/session-notes/:id", middleware.RequirePermission("psychologist.medical_records.update"), psychologist.UpdateSessionNote)
 	api.Get("/patients/:id/medical-record", middleware.RequirePermission("psychologist.medical_records.view"), psychologist.GetMedicalRecord)
 	api.Get("/medical-records", middleware.RequirePermission("psychologist.medical_records.view"), psychologist.GetMedicalRecords)
-	api.Post("/patients/:id/session-notes", middleware.RequirePermission("psychologist.medical_records.create"), psychologist.CreateSessionNote)
+	api.Post("/patients/:id/session-notes", middleware.RequirePermission("psychologist.medical_records.update"), psychologist.CreateSessionNote)
 	api.Put("/patients/:studentId/status", middleware.RequirePermission("psychologist.patients.update"), psychologist.UpdatePatientStatus)
 
 	api.Get("/assessments", middleware.RequirePermission("psychologist.reports.view"), psychologist.GetAssessments)
-	api.Post("/assessments", middleware.RequirePermission("psychologist.reports.create"), psychologist.CreateAssessment)
+	api.Post("/assessments", middleware.RequirePermission("psychologist.reports.update"), psychologist.CreateAssessment)
 
 	api.Get("/analytics", middleware.RequirePermission("psychologist.dashboard.view"), psychologist.GetAnalytics)
 	api.Get("/prodi", psychologist.GetProdiList)
@@ -46,7 +46,7 @@ func SetupPsychologistRoutes(app *fiber.App) {
 
 	// Tindak Lanjut (Referral)
 	api.Get("/referrals", middleware.RequirePermission("psychologist.referrals.view"), psychologist.GetReferrals)
-	api.Post("/referrals", middleware.RequirePermission("psychologist.referrals.create"), psychologist.CreateReferral)
+	api.Post("/referrals", middleware.RequirePermission("psychologist.referrals.update"), psychologist.CreateReferral)
 	api.Post("/referrals/:id/send", middleware.RequirePermission("psychologist.referrals.update"), psychologist.SendReferral)
 	api.Post("/referrals/:id/confirm-received", middleware.RequirePermission("psychologist.referrals.update"), psychologist.ConfirmReferralReceived)
 	api.Get("/referrals/:id/download", middleware.RequirePermission("psychologist.referrals.view"), psychologist.DownloadReferralPDF)

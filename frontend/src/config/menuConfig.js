@@ -88,30 +88,27 @@ export const MENU_ITEMS = [
     module: 'akademik',
     items: [
       {
-        name: 'Fakultas & Program Studi',
+        name: 'Master Akademik',
         icon: 'apartment',
-        path: '/app/akademik/fakultas',
-        permission: P.FAKULTAS_VIEW,
+        path: '/app/akademik',
         hasSubmenu: true,
         submenu: [
+          { name: 'Periode Akademik', icon: 'calendar_month', path: '/app/akademik/periode', permission: P.PERIODE_VIEW },
           { name: 'Kelola Fakultas', icon: 'corporate_fare', path: '/app/akademik/fakultas', permission: P.FAKULTAS_VIEW },
           { name: 'Program Studi', icon: 'database', path: '/app/akademik/prodi', permission: P.PRODI_VIEW },
-          { name: 'Akun Prodi', icon: 'manage_accounts', path: '/app/akademik/prodi-users', permission: P.PRODI_USERS_VIEW },
         ],
       },
-      { name: 'Dosen', icon: 'badge', path: '/app/akademik/dosen', permission: P.DOSEN_VIEW },
       {
-        name: 'Mahasiswa',
+        name: 'Sivitas Akademika',
         icon: 'school',
-        path: '/app/akademik/mahasiswa',
-        permission: P.MAHASISWA_VIEW,
+        path: '/app/akademik/sivitas',
         hasSubmenu: true,
         submenu: [
+          { name: 'Dosen', icon: 'badge', path: '/app/akademik/dosen', permission: P.DOSEN_VIEW },
           { name: 'Direktori Mahasiswa', icon: 'groups', path: '/app/akademik/mahasiswa', permission: P.MAHASISWA_VIEW },
           { name: 'PMB / Daftar Ulang', icon: 'person_add', path: '/app/akademik/pmb', permission: P.PMB_VIEW },
         ],
       },
-      { name: 'Periode Akademik', icon: 'calendar_month', path: '/app/akademik/periode', permission: P.PERIODE_VIEW },
     ],
   },
 
@@ -122,10 +119,18 @@ export const MENU_ITEMS = [
     group: 'KEMAHASISWAAN',
     module: 'kemahasiswaan',
     items: [
-      { name: 'Beasiswa', icon: 'payments', path: '/app/kemahasiswaan/beasiswa', permission: P.BEASISWA_VIEW },
-      { name: 'Prestasi Mahasiswa', icon: 'emoji_events', path: '/app/kemahasiswaan/prestasi', permission: P.PRESTASI_VIEW },
-      { name: 'Aspirasi', icon: 'chat', path: '/app/kemahasiswaan/aspirasi', permission: P.ASPIRASI_VIEW },
-      { name: 'Asuransi Mahasiswa', icon: 'health_and_safety', path: '/app/kemahasiswaan/asuransi', permission: P.ASURANSI_VIEW },
+      {
+        name: 'Layanan Kemahasiswaan',
+        icon: 'school',
+        path: '/app/kemahasiswaan/layanan',
+        hasSubmenu: true,
+        submenu: [
+          { name: 'Beasiswa', icon: 'payments', path: '/app/kemahasiswaan/beasiswa', permission: P.BEASISWA_VIEW },
+          { name: 'Prestasi Mahasiswa', icon: 'emoji_events', path: '/app/kemahasiswaan/prestasi', permission: P.PRESTASI_VIEW },
+          { name: 'Aspirasi', icon: 'chat', path: '/app/kemahasiswaan/aspirasi', permission: P.ASPIRASI_VIEW },
+          { name: 'Asuransi Mahasiswa', icon: 'health_and_safety', path: '/app/kemahasiswaan/asuransi', permission: P.ASURANSI_VIEW },
+        ]
+      }
     ],
   },
 
@@ -137,38 +142,44 @@ export const MENU_ITEMS = [
     module: 'ormawa',
     items: [
       {
-        name: 'Kelola Ormawa',
-        icon: 'groups',
-        path: '/app/ormawa',
-        permission: P.ORMAWA_VIEW,
+        name: 'Master Data Ormawa',
+        icon: 'corporate_fare',
+        path: '/app/ormawa/master',
         hasSubmenu: true,
         submenu: [
+          { name: 'Dashboard Ormawa', icon: 'dashboard', path: '/app/ormawa/dashboard', permission: P.ORMAWA_DASHBOARD_VIEW },
           { name: 'Daftar Organisasi', icon: 'corporate_fare', path: '/app/ormawa/organisasi', permission: P.ORMAWA_VIEW },
           { name: 'Kategori Organisasi', icon: 'category', path: '/app/ormawa/kategori', permission: P.ORMAWA_KATEGORI_VIEW },
           { name: 'Gamifikasi', icon: 'emoji_events', path: '/app/ormawa/gamifikasi', permission: P.ORMAWA_GAMIFIKASI_VIEW },
           { name: 'Pagu Dana Ormawa', icon: 'account_balance_wallet', path: '/app/ormawa/pagu', permission: P.ORMAWA_PAGU_VIEW },
         ],
       },
-      { name: 'Dashboard Ormawa', icon: 'dashboard', path: '/app/ormawa/dashboard', permission: P.ORMAWA_DASHBOARD_VIEW },
-      { name: 'Anggota Aktif', icon: 'group', path: '/app/ormawa/anggota', permission: P.ORMAWA_MEMBERS_VIEW },
-      { name: 'Staf Organisasi', icon: 'badge', path: '/app/ormawa/staff', permission: P.ORMAWA_MEMBERS_VIEW },
-      { name: 'Struktur Pengurus', icon: 'account_tree', path: '/app/ormawa/struktur', permission: P.ORMAWA_STRUCTURE_VIEW },
-      { name: 'Open Recruitment', icon: 'how_to_reg', path: '/app/ormawa/recruitment', permission: P.ORMAWA_RECRUITMENT_VIEW },
-    ],
-  },
-  {
-    group: 'OPERASIONAL ORMAWA',
-    module: 'ormawa',
-    items: [
-      { name: 'Proposal & Kegiatan', icon: 'description', path: '/app/ormawa/proposal', permission: P.ORMAWA_PROPOSAL_VIEW },
-      { name: 'Jadwal Kalender', icon: 'calendar_month', path: '/app/ormawa/jadwal', permission: P.ORMAWA_EVENT_VIEW },
-      { name: 'Sistem Absensi (QR)', icon: 'qr_code', path: '/app/ormawa/absensi', permission: P.ORMAWA_ATTENDANCE_VIEW },
-      { name: 'Pagu & Buku Keuangan', icon: 'account_balance_wallet', path: '/app/ormawa/keuangan', permission: P.ORMAWA_FINANCE_VIEW },
-      { name: 'Laporan & LPJ', icon: 'assignment', path: '/app/ormawa/lpj', permission: P.ORMAWA_LPJ_VIEW },
-      { name: 'Aspirasi Masuk', icon: 'campaign', path: '/app/ormawa/aspirasi', permission: P.ORMAWA_ASPIRATION_VIEW },
-      { name: 'Siaran Pengumuman', icon: 'campaign', path: '/app/ormawa/pengumuman', permission: P.ORMAWA_ANNOUNCEMENT_VIEW },
-      { name: 'Role & Akses', icon: 'security', path: '/app/ormawa/rbac', permission: P.ORMAWA_RBAC_VIEW },
-      { name: 'Pengaturan Sistem', icon: 'settings', path: '/app/ormawa/pengaturan', permission: P.ORMAWA_SETTINGS_VIEW },
+      {
+        name: 'Keanggotaan & SDM',
+        icon: 'groups',
+        path: '/app/ormawa/sdm',
+        hasSubmenu: true,
+        submenu: [
+          { name: 'Anggota Aktif', icon: 'group', path: '/app/ormawa/anggota', permission: P.ORMAWA_MEMBERS_VIEW },
+          { name: 'Staf Organisasi', icon: 'badge', path: '/app/ormawa/staff', permission: P.ORMAWA_MEMBERS_VIEW },
+          { name: 'Struktur Pengurus', icon: 'account_tree', path: '/app/ormawa/struktur', permission: P.ORMAWA_STRUCTURE_VIEW },
+          { name: 'Open Recruitment', icon: 'how_to_reg', path: '/app/ormawa/recruitment', permission: P.ORMAWA_RECRUITMENT_VIEW },
+          { name: 'Siaran Pengumuman', icon: 'campaign', path: '/app/ormawa/pengumuman', permission: P.ORMAWA_ANNOUNCEMENT_VIEW },
+        ],
+      },
+      {
+        name: 'Operasional & Kegiatan',
+        icon: 'assignment',
+        path: '/app/ormawa/operasional',
+        hasSubmenu: true,
+        submenu: [
+          { name: 'Proposal & Kegiatan', icon: 'description', path: '/app/ormawa/proposal', permission: P.ORMAWA_PROPOSAL_VIEW },
+          { name: 'Jadwal Kalender', icon: 'calendar_month', path: '/app/ormawa/jadwal', permission: P.ORMAWA_EVENT_VIEW },
+          { name: 'Sistem Absensi (QR)', icon: 'qr_code', path: '/app/ormawa/absensi', permission: P.ORMAWA_ATTENDANCE_VIEW },
+          { name: 'Pagu & Buku Keuangan', icon: 'account_balance_wallet', path: '/app/ormawa/keuangan', permission: P.ORMAWA_FINANCE_VIEW },
+          { name: 'Laporan & LPJ', icon: 'assignment', path: '/app/ormawa/lpj', permission: P.ORMAWA_LPJ_VIEW },
+        ],
+      },
     ],
   },
 
@@ -179,16 +190,23 @@ export const MENU_ITEMS = [
     group: 'LAYANAN PSIKOLOGI',
     module: 'psikologi',
     items: [
-      { name: 'Dashboard Psikolog', icon: 'dashboard', path: '/app/psikologi/dashboard', permission: P.PSIKOLOGI_DASHBOARD_VIEW },
-      { name: 'Direktori Psikolog', icon: 'groups', path: '/app/psikologi/list', permission: P.PSIKOLOGI_VIEW },
-      { name: 'Booking Konseling', icon: 'calendar_month', path: '/app/psikologi/bookings', permission: P.PSIKOLOGI_BOOKING_VIEW },
-      { name: 'Jadwal Saya', icon: 'schedule', path: '/app/psikologi/schedule', permission: P.PSIKOLOGI_SCHEDULE_VIEW },
-      { name: 'Daftar Pasien', icon: 'people', path: '/app/psikologi/patients', permission: P.PSIKOLOGI_PATIENT_VIEW },
-      { name: 'Rekam Konseling', icon: 'medical_services', path: '/app/psikologi/medical-records', permission: P.PSIKOLOGI_RECORD_VIEW },
-      { name: 'Asesmen', icon: 'quiz', path: '/app/psikologi/assessment', permission: P.PSIKOLOGI_ASSESSMENT_VIEW },
-      { name: 'Analytics & Trend', icon: 'analytics', path: '/app/psikologi/analytics', permission: P.PSIKOLOGI_REPORT_VIEW },
-      { name: 'Tindak Lanjut', icon: 'forward_to_inbox', path: '/app/psikologi/referrals', permission: P.PSIKOLOGI_REFERRAL_VIEW },
-      { name: 'Pengaturan', icon: 'settings', path: '/app/psikologi/settings', permission: P.PSIKOLOGI_SETTINGS_VIEW },
+      {
+        name: 'Klinik Psikologi',
+        icon: 'psychology',
+        path: '/app/psikologi/klinik',
+        hasSubmenu: true,
+        submenu: [
+          { name: 'Dashboard Psikolog', icon: 'dashboard', path: '/app/psikologi/dashboard', permission: P.PSIKOLOGI_DASHBOARD_VIEW },
+          { name: 'Direktori Psikolog', icon: 'groups', path: '/app/psikologi/list', permission: P.PSIKOLOGI_VIEW },
+          { name: 'Booking Konseling', icon: 'calendar_month', path: '/app/psikologi/bookings', permission: P.PSIKOLOGI_BOOKING_VIEW },
+          { name: 'Jadwal Saya', icon: 'schedule', path: '/app/psikologi/schedule', permission: P.PSIKOLOGI_SCHEDULE_VIEW },
+          { name: 'Daftar Pasien', icon: 'people', path: '/app/psikologi/patients', permission: P.PSIKOLOGI_PATIENT_VIEW },
+          { name: 'Rekam Konseling', icon: 'medical_services', path: '/app/psikologi/medical-records', permission: P.PSIKOLOGI_RECORD_VIEW },
+          { name: 'Asesmen', icon: 'quiz', path: '/app/psikologi/assessment', permission: P.PSIKOLOGI_ASSESSMENT_VIEW },
+          { name: 'Analytics & Trend', icon: 'analytics', path: '/app/psikologi/analytics', permission: P.PSIKOLOGI_REPORT_VIEW },
+          { name: 'Tindak Lanjut', icon: 'forward_to_inbox', path: '/app/psikologi/referrals', permission: P.PSIKOLOGI_REFERRAL_VIEW },
+       ],
+      }
     ],
   },
 
@@ -199,17 +217,24 @@ export const MENU_ITEMS = [
     group: 'LAYANAN KESEHATAN',
     module: 'kesehatan',
     items: [
-      { name: 'Dashboard Medis', icon: 'dashboard', path: '/app/kesehatan/dashboard', permission: P.KESEHATAN_DASHBOARD_VIEW },
-      { name: 'Direktori Tenaga Medis', icon: 'groups', path: '/app/kesehatan/list', permission: P.KESEHATAN_VIEW },
-      { name: 'Booking Janji Temu', icon: 'calendar_month', path: '/app/kesehatan/bookings', permission: P.KESEHATAN_BOOKING_VIEW },
-      { name: 'Jadwal Praktik', icon: 'schedule', path: '/app/kesehatan/schedule', permission: P.KESEHATAN_SCHEDULE_VIEW },
-      { name: 'Daftar Mahasiswa', icon: 'people', path: '/app/kesehatan/patients', permission: P.KESEHATAN_PATIENT_VIEW },
-      { name: 'Rekam Medis & Screening', icon: 'medical_services', path: '/app/kesehatan/medical-records', permission: P.KESEHATAN_RECORD_VIEW },
-      { name: 'Klaim Asuransi', icon: 'health_and_safety', path: '/app/kesehatan/claims', permission: P.KESEHATAN_CLAIM_VIEW },
-      { name: 'Surat Rujukan', icon: 'forward_to_inbox', path: '/app/kesehatan/referrals', permission: P.KESEHATAN_REFERRAL_VIEW },
-      { name: 'BAP Kesehatan', icon: 'description', path: '/app/kesehatan/bap', permission: P.KESEHATAN_BAP_VIEW },
-      { name: 'Laporan Klinis', icon: 'analytics', path: '/app/kesehatan/reports', permission: P.KESEHATAN_REPORT_VIEW },
-      { name: 'Pengaturan', icon: 'settings', path: '/app/kesehatan/settings', permission: P.KESEHATAN_SETTINGS_VIEW },
+      {
+        name: 'Klinik Kesehatan',
+        icon: 'health_and_safety',
+        path: '/app/kesehatan/klinik',
+        hasSubmenu: true,
+        submenu: [
+          { name: 'Dashboard Medis', icon: 'dashboard', path: '/app/kesehatan/dashboard', permission: P.KESEHATAN_DASHBOARD_VIEW },
+          { name: 'Direktori Tenaga Medis', icon: 'groups', path: '/app/kesehatan/list', permission: P.KESEHATAN_VIEW },
+          { name: 'Booking Janji Temu', icon: 'calendar_month', path: '/app/kesehatan/bookings', permission: P.KESEHATAN_BOOKING_VIEW },
+          { name: 'Jadwal Praktik', icon: 'schedule', path: '/app/kesehatan/schedule', permission: P.KESEHATAN_SCHEDULE_VIEW },
+          { name: 'Daftar Mahasiswa', icon: 'people', path: '/app/kesehatan/patients', permission: P.KESEHATAN_PATIENT_VIEW },
+          { name: 'Rekam Medis & Screening', icon: 'medical_services', path: '/app/kesehatan/medical-records', permission: P.KESEHATAN_RECORD_VIEW },
+          { name: 'Klaim Asuransi', icon: 'health_and_safety', path: '/app/kesehatan/claims', permission: P.KESEHATAN_CLAIM_VIEW },
+          { name: 'Surat Rujukan', icon: 'forward_to_inbox', path: '/app/kesehatan/referrals', permission: P.KESEHATAN_REFERRAL_VIEW },
+          { name: 'BAP Kesehatan', icon: 'description', path: '/app/kesehatan/bap', permission: P.KESEHATAN_BAP_VIEW },
+          { name: 'Laporan Klinis', icon: 'analytics', path: '/app/kesehatan/reports', permission: P.KESEHATAN_REPORT_VIEW },
+        ],
+      }
     ],
   },
 
@@ -217,35 +242,51 @@ export const MENU_ITEMS = [
   // KENCANA / PKKMB
   // =============================================
   {
-    group: 'PKKMB KENCANA (UNIVERSITAS)',
+    group: 'PKKMB KENCANA',
     module: 'kencana',
     items: [
-      { name: 'Dashboard Kencana', icon: 'account_balance', path: '/app/kencana/dashboard', permission: P.KENCANA_DASHBOARD_VIEW },
-      { name: 'Kelola Periode', icon: 'date_range', path: '/app/kencana/periods', permission: P.KENCANA_PERIOD_VIEW },
-      { name: 'Pengumuman', icon: 'campaign', path: '/app/kencana/announcements', permission: P.KENCANA_ANNOUNCEMENT_VIEW },
-      { name: 'Tahap Pra-Kencana', icon: 'flag', path: '/app/kencana/pre-kencana', permission: P.KENCANA_PRE_VIEW },
-      { name: 'Tahap Universitas', icon: 'account_tree', path: '/app/kencana/stages', permission: P.KENCANA_UNIV_VIEW },
-      { name: 'Tahap Fakultas', icon: 'corporate_fare', path: '/app/kencana/faculty-stages', permission: P.KENCANA_FACULTY_VIEW },
-      { name: 'Data Peserta', icon: 'groups', path: '/app/kencana/participants', permission: P.KENCANA_PARTICIPANT_VIEW },
-      { name: 'Rekap Nilai', icon: 'grade', path: '/app/kencana/scores', permission: P.KENCANA_SCORE_VIEW },
-      { name: 'Banding Nilai', icon: 'gavel', path: '/app/kencana/banding', permission: P.KENCANA_BANDING_VIEW },
-      { name: 'Rekap Nilai Kelompok', icon: 'assessment', path: '/app/kencana/score-summary', permission: P.KENCANA_SUMMARY_VIEW },
-      { name: 'Remedial', icon: 'autorenew', path: '/app/kencana/remedials', permission: P.KENCANA_REMEDIAL_VIEW },
-      { name: 'Sertifikat', icon: 'workspace_premium', path: '/app/kencana/certificates', permission: P.KENCANA_CERTIFICATE_VIEW },
-      { name: 'Kelola Kelompok', icon: 'group_work', path: '/app/kencana/groups', permission: P.KENCANA_GROUP_VIEW },
-      { name: 'Kelola Mentor', icon: 'supervisor_account', path: '/app/kencana/mentors', permission: P.KENCANA_MENTOR_VIEW },
-      { name: 'Pengaturan Kencana', icon: 'settings', path: '/app/kencana/settings', permission: P.KENCANA_SETTINGS_VIEW },
-    ],
-  },
-  {
-    group: 'KENCANA MENTOR',
-    module: 'kencana',
-    items: [
-      { name: 'Dashboard Mentor', icon: 'dashboard', path: '/app/kencana/mentor', permission: P.KENCANA_MENTOR_DASHBOARD },
-      { name: 'Kelompok Saya', icon: 'diversity_3', path: '/app/kencana/mentor/groups', permission: P.KENCANA_MENTOR_STUDENTS },
-      { name: 'Mahasiswa Saya', icon: 'school', path: '/app/kencana/mentor/students', permission: P.KENCANA_MENTOR_STUDENTS },
-      { name: 'Cari Mahasiswa', icon: 'person_search', path: '/app/kencana/mentor/available', permission: P.KENCANA_MENTOR_STUDENTS },
-      { name: 'Pengaturan Mentor', icon: 'settings', path: '/app/kencana/mentor/settings', permission: P.KENCANA_MENTOR_SETTINGS },
+      {
+        name: 'Manajemen Kencana',
+        icon: 'account_balance',
+        path: '/app/kencana/manajemen',
+        hasSubmenu: true,
+        submenu: [
+          { name: 'Dashboard', icon: 'dashboard', path: '/app/kencana/dashboard', permission: P.KENCANA_DASHBOARD_VIEW },
+          { name: 'Kelola Periode', icon: 'date_range', path: '/app/kencana/periods', permission: P.KENCANA_PERIOD_VIEW },
+          { name: 'Pengumuman', icon: 'campaign', path: '/app/kencana/announcements', permission: P.KENCANA_ANNOUNCEMENT_VIEW },
+          { name: 'Tahap Pra-Kencana', icon: 'flag', path: '/app/kencana/pre-kencana', permission: P.KENCANA_PRE_VIEW },
+          { name: 'Tahap Universitas', icon: 'account_tree', path: '/app/kencana/stages', permission: P.KENCANA_UNIV_VIEW },
+          { name: 'Tahap Fakultas', icon: 'corporate_fare', path: '/app/kencana/faculty-stages', permission: P.KENCANA_FACULTY_VIEW },
+          { name: 'Data Peserta', icon: 'groups', path: '/app/kencana/participants', permission: P.KENCANA_PARTICIPANT_VIEW },
+          { name: 'Kelola Kelompok', icon: 'group_work', path: '/app/kencana/groups', permission: P.KENCANA_GROUP_VIEW },
+          { name: 'Kelola Mentor', icon: 'supervisor_account', path: '/app/kencana/mentors', permission: P.KENCANA_MENTOR_VIEW },
+        ],
+      },
+      {
+        name: 'Penilaian & Kelulusan',
+        icon: 'grade',
+        path: '/app/kencana/penilaian',
+        hasSubmenu: true,
+        submenu: [
+          { name: 'Rekap Nilai', icon: 'grade', path: '/app/kencana/scores', permission: P.KENCANA_SCORE_VIEW },
+          { name: 'Banding Nilai', icon: 'gavel', path: '/app/kencana/banding', permission: P.KENCANA_BANDING_VIEW },
+          { name: 'Rekap Nilai Kelompok', icon: 'assessment', path: '/app/kencana/score-summary', permission: P.KENCANA_SUMMARY_VIEW },
+          { name: 'Remedial', icon: 'autorenew', path: '/app/kencana/remedials', permission: P.KENCANA_REMEDIAL_VIEW },
+          { name: 'Sertifikat', icon: 'workspace_premium', path: '/app/kencana/certificates', permission: P.KENCANA_CERTIFICATE_VIEW },
+        ],
+      },
+      {
+        name: 'Portal Mentor',
+        icon: 'diversity_3',
+        path: '/app/kencana/portal-mentor',
+        hasSubmenu: true,
+        submenu: [
+          { name: 'Dashboard Mentor', icon: 'dashboard', path: '/app/kencana/mentor', permission: P.KENCANA_MENTOR_DASHBOARD },
+          { name: 'Kelompok Saya', icon: 'diversity_3', path: '/app/kencana/mentor/groups', permission: P.KENCANA_MENTOR_STUDENTS },
+          { name: 'Mahasiswa Saya', icon: 'school', path: '/app/kencana/mentor/students', permission: P.KENCANA_MENTOR_STUDENTS },
+          { name: 'Cari Mahasiswa', icon: 'person_search', path: '/app/kencana/mentor/available', permission: P.KENCANA_MENTOR_STUDENTS },
+        ],
+      }
     ],
   },
 
@@ -288,13 +329,20 @@ export const MENU_ITEMS = [
     group: 'CMS & SISTEM',
     module: 'sistem',
     items: [
-      { name: 'Kelola Berita', icon: 'newspaper', path: '/app/sistem/berita', permission: P.NEWS_VIEW },
-      { name: 'Landing Page', icon: 'web', path: '/app/sistem/landing', permission: P.LANDING_VIEW },
-      { name: 'Tema & Tampilan', icon: 'palette', path: '/app/sistem/tema', permission: P.THEME_VIEW },
-      { name: 'Format Surat', icon: 'description', path: '/app/sistem/dokumen', permission: P.DOCUMENT_VIEW },
-      { name: 'Pengaturan Sistem', icon: 'settings', path: '/app/sistem/pengaturan', permission: P.SETTINGS_VIEW },
-      { name: 'Dokumentasi', icon: 'menu_book', path: '/app/sistem/docs', permission: P.DOCS_VIEW },
-      { name: 'Audit Log', icon: 'history', path: '/app/sistem/audit', permission: P.AUDIT_VIEW },
+      {
+        name: 'Manajemen Sistem',
+        icon: 'settings_applications',
+        path: '/app/sistem',
+        hasSubmenu: true,
+        submenu: [
+          { name: 'Kelola Berita', icon: 'newspaper', path: '/app/sistem/berita', permission: P.NEWS_VIEW },
+          { name: 'Landing Page', icon: 'web', path: '/app/sistem/landing', permission: P.LANDING_VIEW },
+          { name: 'Tema & Tampilan', icon: 'palette', path: '/app/sistem/tema', permission: P.THEME_VIEW },
+          { name: 'Format Surat', icon: 'description', path: '/app/sistem/dokumen', permission: P.DOCUMENT_VIEW },
+          { name: 'Dokumentasi', icon: 'menu_book', path: '/app/sistem/docs', permission: P.DOCS_VIEW },
+          { name: 'Audit Log', icon: 'history', path: '/app/sistem/audit', permission: P.AUDIT_VIEW },
+        ],
+      }
     ],
   },
 
@@ -307,6 +355,7 @@ export const MENU_ITEMS = [
     items: [
       { name: 'Notifikasi', icon: 'notifications', path: '/app/notifications', permission: P.NOTIFICATIONS_VIEW },
       { name: 'Profil', icon: 'account_circle', path: '/app/profile', permission: P.PROFILE_VIEW },
+      { name: 'Pengaturan Sistem', icon: 'settings', path: '/app/sistem/pengaturan', permission: P.SETTINGS_VIEW },
     ],
   },
 ];
@@ -333,10 +382,16 @@ export const PORTAL_BRANDING = {
  * This is the core function that replaces all 9 PortalConfig entries.
  *
  * @param {function} hasPermission - Permission checker function (from usePermission hook)
+ * @param {boolean} isSuperAdmin - Whether the user is a superadmin
  * @returns {Array} Filtered menu groups with only accessible items
  */
-export function getFilteredMenu(hasPermission) {
+export function getFilteredMenu(hasPermission, isSuperAdmin = false) {
   return MENU_ITEMS
+    .filter(group => {
+      // Hide student portal from superadmin sidebar
+      if (isSuperAdmin && group.module === 'student') return false;
+      return true;
+    })
     .map(group => {
       const filteredItems = (group.items || [])
         .map(item => {

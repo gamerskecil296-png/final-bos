@@ -74,6 +74,7 @@ const TenagaKesehatanBooking = React.lazy(() => import('@/pages/modules/kesehata
 const TenagaKesehatanSchedule = React.lazy(() => import('@/pages/modules/kesehatan/ScheduleManagement'));
 const TenagaKesehatanPatientList = React.lazy(() => import('@/pages/modules/kesehatan/PatientList'));
 const TenagaKesehatanPatientRecord = React.lazy(() => import('@/pages/modules/kesehatan/PatientMedicalRecord'));
+const AdminTenagaKesehatanMedicalRecords = React.lazy(() => import('@/pages/modules/kesehatan/AdminTenagaKesehatanMedicalRecords'));
 const InsuranceReview = React.lazy(() => import('@/pages/modules/kesehatan/InsuranceReview'));
 const TenagaKesehatanReferral = React.lazy(() => import('@/pages/modules/kesehatan/ReferralManagement'));
 const BAPManagement = React.lazy(() => import('@/pages/modules/kesehatan/BAPManagement'));
@@ -254,7 +255,7 @@ export default function AppRoutes() {
       <Route path="kesehatan/schedule" element={<Guarded perm={P.KESEHATAN_SCHEDULE_VIEW}><TenagaKesehatanSchedule /></Guarded>} />
       <Route path="kesehatan/patients" element={<Guarded perm={P.KESEHATAN_PATIENT_VIEW}><TenagaKesehatanPatientList /></Guarded>} />
       <Route path="kesehatan/patients/:id/medical-record" element={<Guarded perm={P.KESEHATAN_PATIENT_VIEW}><TenagaKesehatanPatientRecord /></Guarded>} />
-      <Route path="kesehatan/medical-records" element={<Guarded perm={P.KESEHATAN_RECORD_VIEW}><TenagaKesehatanPatientRecord /></Guarded>} />
+      <Route path="kesehatan/medical-records" element={<Guarded perm={P.KESEHATAN_RECORD_VIEW}><AdminTenagaKesehatanMedicalRecords /></Guarded>} />
       <Route path="kesehatan/claims" element={<Guarded perm={P.KESEHATAN_CLAIM_VIEW}><InsuranceReview /></Guarded>} />
       <Route path="kesehatan/referrals" element={<Guarded perm={P.KESEHATAN_REFERRAL_VIEW}><TenagaKesehatanReferral /></Guarded>} />
       <Route path="kesehatan/bap" element={<Guarded perm={P.KESEHATAN_BAP_VIEW}><BAPManagement /></Guarded>} />

@@ -390,23 +390,7 @@ export default function NotificationDropdown() {
             <button
               onClick={() => {
                 setIsOpen(false);
-                if (isOrmawa) {
-                  navigate('/ormawa/notifikasi');
-                } else if (isPsychologist) {
-                  navigate('/psychologist/notifications');
-                } else if (isSuperAdmin) {
-                  navigate('/admin');
-                } else if (isTenagaKesehatan) {
-                  navigate('/tenagakes/notifications');
-                } else if (isKencanaAdmin) {
-                  navigate('/kencana-admin/notifications');
-                } else if (isKencanaFakultas) {
-                  navigate('/kencana-fakultas/notifications');
-                } else if (isKencanaMentor) {
-                  navigate('/kencana-mentor/notifications');
-                } else {
-                  navigate('/student/notifikasi');
-                }
+                navigate('/app/notifications');
               }}
               className="w-full p-4 border-t border-neutral-100 text-xs font-bold text-neutral-900 hover:bg-neutral-50 transition-colors flex items-center justify-center gap-2"
             >

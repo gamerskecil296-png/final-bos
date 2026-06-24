@@ -35,8 +35,9 @@ export default function BAPManagement({ isEmbedded = false }) {
   const [baps, setBaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const { hasPermission } = usePermission();
-  const canManageBap = hasPermission('health.bap.update') || hasPermission('health.bap.create') || hasPermission('health.bap');
-  
+  const canCreate = hasPermission('health.bap.create') || hasPermission('health.bap');
+  const canEdit = hasPermission('health.bap.update') || hasPermission('health.bap');
+  const canDelete = hasPermission('health.bap.delete') || hasPermission('health.bap');  
   // Modals
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -343,7 +344,7 @@ export default function BAPManagement({ isEmbedded = false }) {
           <button onClick={() => handleOpenDetail(row)} className="h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--theme-bg)] hover:bg-[var(--theme-surface)] border border-[var(--theme-border)] text-[var(--theme-text)] transition-colors" title="Detail">
             <Icon name="visibility" size={14} />
           </button>
-          {canManageBap && (
+          {canEdit && (
             <button onClick={() => handleOpenEdit(row)} className="h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] transition-colors" title="Edit">
               <Icon name="edit" size={14} />
             </button>
@@ -351,7 +352,7 @@ export default function BAPManagement({ isEmbedded = false }) {
           <button onClick={() => handleDownloadPDF(row)} className="h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--theme-info)]/10 hover:bg-[var(--theme-info)]/20 text-[var(--theme-info)] transition-colors" title="Download PDF">
             <Icon name="download" size={14} />
           </button>
-          {canManageBap && row.status === 'DRAFT' && (
+          {canDelete && row.status === 'DRAFT' && (
              <button onClick={() => handleDelete(row)} className="h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--theme-error)]/10 hover:bg-[var(--theme-error)]/20 text-[var(--theme-error)] transition-colors" title="Hapus">
                <Icon name="delete" size={14} />
              </button>
@@ -373,7 +374,7 @@ export default function BAPManagement({ isEmbedded = false }) {
           icon="description"
           badges={[{ label: 'BAP Management', active: true }]}
           actions={
-            canManageBap && (
+            canCreate && (
               <button
                 onClick={handleOpenCreate}
                 className="flex items-center gap-2 px-4 py-2 bg-[var(--theme-primary)] text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-sm text-xs uppercase tracking-wider"

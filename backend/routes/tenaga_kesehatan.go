@@ -20,9 +20,9 @@ func SetupTenagaKesehatanRoutes(app *fiber.App) {
 
 	// Jadwal & Booking
 	api.Get("/schedules", middleware.RequirePermission("health.schedules.view"), tenaga_kesehatan.GetSchedules)
-	api.Post("/schedules", middleware.RequirePermission("health.schedules.create"), tenaga_kesehatan.CreateSchedule)
+	api.Post("/schedules", middleware.RequirePermission("health.schedules.update"), tenaga_kesehatan.CreateSchedule)
 	api.Put("/schedules/:id", middleware.RequirePermission("health.schedules.update"), tenaga_kesehatan.UpdateSchedule)
-	api.Delete("/schedules/:id", middleware.RequirePermission("health.schedules.delete"), tenaga_kesehatan.DeleteSchedule)
+	api.Delete("/schedules/:id", middleware.RequirePermission("health.schedules.update"), tenaga_kesehatan.DeleteSchedule)
 
 	api.Get("/bookings", middleware.RequirePermission("health.bookings.view"), tenaga_kesehatan.GetBookings)
 	api.Get("/bookings/:id", middleware.RequirePermission("health.bookings.view"), tenaga_kesehatan.GetBookingDetail)
@@ -32,7 +32,7 @@ func SetupTenagaKesehatanRoutes(app *fiber.App) {
 	api.Get("/patients", middleware.RequirePermission("health.patients.view"), tenaga_kesehatan.GetPatients)
 	api.Get("/patients/:id/medical-record", middleware.RequirePermission("health.medical_records.view"), tenaga_kesehatan.GetMedicalRecord)
 	api.Get("/medical-records/:id/export-pdf", middleware.RequirePermission("health.medical_records.view"), tenaga_kesehatan.ExportMedicalRecordPDF)
-	api.Post("/patients/:id/screening", middleware.RequirePermission("health.medical_records.create"), tenaga_kesehatan.CreateScreening)
+	api.Post("/patients/:id/screening", middleware.RequirePermission("health.medical_records.update"), tenaga_kesehatan.CreateScreening)
 	api.Put("/medical-records/:record_id", middleware.RequirePermission("health.medical_records.update"), tenaga_kesehatan.UpdateMedicalRecord)
 
 	// QR / NIM Lookup
