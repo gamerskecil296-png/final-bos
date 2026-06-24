@@ -232,7 +232,7 @@ export default function AppRoutes() {
       <Route path="ormawa/aspirasi" element={<Guarded perm={P.ORMAWA_ASPIRATION_VIEW}><AspirationManagement /></Guarded>} />
       <Route path="ormawa/pengumuman" element={<Guarded perm={P.ORMAWA_ANNOUNCEMENT_VIEW}><Pengumuman /></Guarded>} />
       <Route path="ormawa/rbac" element={<Guarded perm={P.ORMAWA_RBAC_VIEW}><RoleBasedAccess /></Guarded>} />
-      <Route path="ormawa/pengaturan" element={<Guarded perm={P.ORMAWA_SETTINGS_VIEW}><OrmawaSettings /></Guarded>} />
+      <Route path="ormawa/pengaturan" element={<OrmawaSettings />} />
 
       {/* ─── Psikologi ─── */}
       <Route path="psikologi/dashboard" element={<Guarded perm={P.PSIKOLOGI_DASHBOARD_VIEW}><PsychologistDashboard /></Guarded>} />
@@ -246,11 +246,11 @@ export default function AppRoutes() {
       <Route path="psikologi/assessment" element={<Guarded perm={P.PSIKOLOGI_ASSESSMENT_VIEW}><AssessmentManagement /></Guarded>} />
       <Route path="psikologi/analytics" element={<Guarded perm={P.PSIKOLOGI_REPORT_VIEW}><AnalyticsTrends /></Guarded>} />
       <Route path="psikologi/referrals" element={<Guarded perm={P.PSIKOLOGI_REFERRAL_VIEW}><ReferralManagement /></Guarded>} />
-      <Route path="psikologi/settings" element={<Guarded perm={P.PSIKOLOGI_SETTINGS_VIEW}><PsychologistSettings /></Guarded>} />
+      <Route path="psikologi/settings" element={<PsychologistSettings />} />
 
       {/* ─── Kesehatan ─── */}
       <Route path="kesehatan/dashboard" element={<Guarded perm={P.KESEHATAN_DASHBOARD_VIEW}><TenagaKesehatanDashboard /></Guarded>} />
-      <Route path="kesehatan/notifications" element={<Guarded perm={P.KESEHATAN_DASHBOARD_VIEW}><NotificationPage /></Guarded>} />
+      <Route path="kesehatan/notifications" element={<NotificationPage />} />
       <Route path="kesehatan/list" element={<Guarded perm={P.KESEHATAN_VIEW}><AdminTenagaKesehatanList /></Guarded>} />
       <Route path="kesehatan/bookings" element={<Guarded perm={P.KESEHATAN_BOOKING_VIEW}><TenagaKesehatanBooking /></Guarded>} />
       <Route path="kesehatan/schedule" element={<Guarded perm={P.KESEHATAN_SCHEDULE_VIEW}><TenagaKesehatanSchedule /></Guarded>} />
@@ -261,7 +261,7 @@ export default function AppRoutes() {
       <Route path="kesehatan/referrals" element={<Guarded perm={P.KESEHATAN_REFERRAL_VIEW}><TenagaKesehatanReferral /></Guarded>} />
       <Route path="kesehatan/bap" element={<Guarded perm={P.KESEHATAN_BAP_VIEW}><BAPManagement /></Guarded>} />
       <Route path="kesehatan/reports" element={<Guarded perm={P.KESEHATAN_REPORT_VIEW}><ReportsPage /></Guarded>} />
-      <Route path="kesehatan/settings" element={<Guarded perm={P.KESEHATAN_SETTINGS_VIEW}><TenagaKesehatanSettings /></Guarded>} />
+      <Route path="kesehatan/settings" element={<TenagaKesehatanSettings />} />
 
       {/* ─── Kencana / PKKMB ─── */}
       <Route path="kencana/dashboard" element={<Guarded perm={P.KENCANA_DASHBOARD_VIEW}><KencanaAdminDashboard /></Guarded>} />
@@ -280,7 +280,7 @@ export default function AppRoutes() {
       <Route path="kencana/certificates" element={<Guarded perm={P.KENCANA_CERTIFICATE_VIEW}><KencanaAdminCertificates /></Guarded>} />
       <Route path="kencana/groups" element={<Guarded perm={P.KENCANA_GROUP_VIEW}><KencanaAdminGroups /></Guarded>} />
       <Route path="kencana/mentors" element={<Guarded perm={P.KENCANA_MENTOR_VIEW}><KencanaAdminMentors /></Guarded>} />
-      <Route path="kencana/settings" element={<Guarded perm={P.KENCANA_SETTINGS_VIEW}><KencanaAdminSettings /></Guarded>} />
+      <Route path="kencana/settings" element={<KencanaAdminSettings />} />
 
       {/* Kencana Mentor */}
       <Route path="kencana/mentor" element={<Guarded perm={P.KENCANA_MENTOR_DASHBOARD}><KencanaMentorDashboard /></Guarded>} />
@@ -289,7 +289,7 @@ export default function AppRoutes() {
       <Route path="kencana/mentor/available" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorAvailable /></Guarded>} />
       <Route path="kencana/mentor/groups" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorGroups /></Guarded>} />
       <Route path="kencana/mentor/groups/:id" element={<Guarded perm={P.KENCANA_MENTOR_STUDENTS}><KencanaMentorGroupDetail /></Guarded>} />
-      <Route path="kencana/mentor/settings" element={<Guarded perm={P.KENCANA_MENTOR_SETTINGS}><KencanaMentorSettings /></Guarded>} />
+      <Route path="kencana/mentor/settings" element={<KencanaMentorSettings />} />
 
       {/* ─── Laporan ─── */}
       <Route path="laporan/fakultas" element={<Guarded perm={P.REPORT_VIEW}><Laporan /></Guarded>} />
@@ -305,7 +305,7 @@ export default function AppRoutes() {
       <Route path="sistem/landing" element={<Guarded perm={P.LANDING_VIEW}><LandingPageEditor /></Guarded>} />
       <Route path="sistem/tema" element={<Guarded perm={P.THEME_VIEW}><ThemeCustomizer /></Guarded>} />
       <Route path="sistem/dokumen" element={<Guarded perm={P.DOCUMENT_VIEW}><DocumentSettings /></Guarded>} />
-      <Route path="sistem/pengaturan" element={<Guarded perm={P.SETTINGS_VIEW}><AcademicPortal /></Guarded>} />
+      <Route path="sistem/pengaturan" element={<AcademicPortal />} />
       <Route path="sistem/docs" element={<Guarded perm={P.DOCS_VIEW}><Documentation /></Guarded>} />
       <Route path="sistem/audit" element={<Guarded perm={P.AUDIT_VIEW}><AuditLog /></Guarded>} />
 

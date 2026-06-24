@@ -174,12 +174,12 @@ export const P = Object.freeze({
   STUDENT_PROFILE_VIEW:    'student.profil.view',
   STUDENT_PROFILE_UPDATE:  'student.profil.update',
   STUDENT_KENCANA_VIEW:    'student.kencana.view',
-  STUDENT_COUNSELING_VIEW: 'student.konseling.view',
-  STUDENT_HEALTH_VIEW:     'student.kesehatan.view',
-  STUDENT_SCHOLARSHIP_VIEW:'student.beasiswa.view',
-  STUDENT_ACHIEVEMENT_VIEW:'student.prestasi.view',
+  STUDENT_COUNSELING_VIEW: 'student.counseling.view',
+  STUDENT_HEALTH_VIEW:     'student.health.view',
+  STUDENT_SCHOLARSHIP_VIEW:'student.scholarship.view',
+  STUDENT_ACHIEVEMENT_VIEW:'student.achievement.view',
   STUDENT_ORGANISATION_VIEW:'student.organisasi.view',
-  STUDENT_VOICE_VIEW:      'student.aspirasi.view',
+  STUDENT_VOICE_VIEW:      'student.aspirations.view',
   STUDENT_PRESENSI_VIEW:   'student.presensi.view',
   STUDENT_INSURANCE_VIEW:  'student.insurance.view',
 
@@ -291,7 +291,7 @@ export const PERMISSION_MIGRATION = Object.freeze({
   'ormawa.recruitment.view':   P.ORMAWA_RECRUITMENT_VIEW,
 
   // Old faculty underscore format
-  'faculty.dashboard.view':    P.DASHBOARD_VIEW,
+  'faculty.dashboard.view':    'faculty.dashboard.view',
   'faculty.view':              P.FAKULTAS_VIEW,
   'faculty.create':            P.FAKULTAS_MANAGE,
   'faculty.update':            P.FAKULTAS_MANAGE,
@@ -311,7 +311,7 @@ export const PERMISSION_MIGRATION = Object.freeze({
   'faculty.counseling.view':   P.PSIKOLOGI_VIEW,
 
   // Old admin format
-  'admin.dashboard.view':      P.DASHBOARD_VIEW,
+  'admin.dashboard.view':      'admin.dashboard.view',
   'admin.audit.view':          P.AUDIT_VIEW,
 
   // Old health format

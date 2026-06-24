@@ -136,12 +136,12 @@ var rbacPermissionCatalog = []fiber.Map{
 		"student.dashboard.view", "student.profile.view", "student.profile.update",
 		"student.kencana.view", "student_kencana_view", "student.kencana.manage",
 		"student.achievement.view", "student.achievement.create", "student.achievement.update", "student.achievement.delete",
-		"student.organisasi.view", "student.organizations.create", "student.organizations.update", "student.organizations.delete",
+		"student.organizations.view", "student.organizations.create", "student.organizations.update", "student.organizations.delete",
 		"student.health.view", "student.health.records.view", "student.health.records.create", "student.health.records.update", "student.health.records.delete",
 		"student.health.bookings.view", "student.health.bookings.create", "student.health.bookings.update", "student.health.bookings.delete",
 		"student.counseling.view", "student.counseling.create", "student.counseling.update", "student.counseling.delete",
 		"student.scholarship.view", "student.scholarship.create",
-		"student.voice.view", "student.aspirations.create", "student.aspirations.update",
+		"student.aspirations.view", "student.aspirations.create", "student.aspirations.update",
 		"student.insurance.view",
 		"student.presensi.view",
 	}},
@@ -149,7 +149,7 @@ var rbacPermissionCatalog = []fiber.Map{
 
 var defaultRBACRoles = []models.RBACRole{
 	{Key: "super_admin", Label: "Super Admin", Description: "Otoritas penuh untuk seluruh modul dan pengaturan sistem.", IsSystem: true, Status: "active", Permissions: mustJSON([]string{"*"})},
-	{Key: "mahasiswa", Label: "Mahasiswa", Description: "Akses dasar mahasiswa untuk layanan akademik dan kemahasiswaan.", IsSystem: true, Status: "active", Permissions: mustJSON([]string{"student.dashboard.view", "student.profile.view", "student.profile.update", "student.kencana.view", "student_kencana_view", "student.kencana.manage", "student.achievement.view", "student.achievement.create", "student.achievement.update", "student.achievement.delete", "student.organisasi.view", "student.organizations.create", "student.organizations.update", "student.organizations.delete", "student.health.view", "student.health.records.view", "student.health.records.create", "student.health.records.update", "student.health.records.delete", "student.health.bookings.view", "student.health.bookings.create", "student.health.bookings.update", "student.health.bookings.delete", "student.counseling.view", "student.counseling.create", "student.counseling.update", "student.counseling.delete", "student.scholarship.view", "student.scholarship.create", "student.voice.view", "student.aspirations.create", "student.aspirations.update", "student.insurance.view", "student.presensi.view"})},
+	{Key: "mahasiswa", Label: "Mahasiswa", Description: "Akses dasar mahasiswa untuk layanan akademik dan kemahasiswaan.", IsSystem: true, Status: "active", Permissions: mustJSON([]string{"student.dashboard.view", "student.profile.view", "student.profile.update", "student.kencana.view", "student_kencana_view", "student.kencana.manage", "student.achievement.view", "student.achievement.create", "student.achievement.update", "student.achievement.delete", "student.organizations.view", "student.organizations.create", "student.organizations.update", "student.organizations.delete", "student.health.view", "student.health.records.view", "student.health.records.create", "student.health.records.update", "student.health.records.delete", "student.health.bookings.view", "student.health.bookings.create", "student.health.bookings.update", "student.health.bookings.delete", "student.counseling.view", "student.counseling.create", "student.counseling.update", "student.counseling.delete", "student.scholarship.view", "student.scholarship.create", "student.aspirations.view", "student.aspirations.create", "student.aspirations.update", "student.insurance.view", "student.presensi.view"})},
 }
 
 func mustJSON(v any) []byte {

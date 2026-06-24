@@ -28,7 +28,8 @@ const getActionLabel = (suffix) => {
     "reset": "Reset Data",
     "reset_password": "Reset Password",
     "generate_account": "Generate Akun",
-    "dashboard": "Dashboard", "settings": "Pengaturan",
+    "dashboard": "Dashboard",
+    "core.dashboard": "Sistem: Dashboard", "settings": "Pengaturan",
     "full_access": "Akses Penuh",
   };
   if (actionLabels[suffix]) return actionLabels[suffix];
@@ -41,142 +42,141 @@ const getFeatureLabel = (prefix) => {
     // ═══════════════════════════════════════════════════════
     // MODULE: Sistem & Konfigurasi
     // ═══════════════════════════════════════════════════════
-    "admin": "Akses Penuh (Super Admin)",
-    "admin.dashboard": "Dashboard Admin",
-    "admin.profile": "Profil Admin",
-    "admin.audit": "Log & Audit Trail",
-    "rbac.roles": "Manajemen Role & Hak Akses",
-    "rbac.users": "Manajemen Pengguna (RBAC)",
-    "system.pmb": "PMB (Penerimaan Mahasiswa Baru)",
-    "system.database": "⛔ Database Sistem (Danger Zone)",
-    "system.docs": "Dokumentasi Sistem",
-    "system.news": "Berita & Pengumuman Sistem",
-    "system.landing": "Pengaturan Landing Page",
-    "system.theme": "Pengaturan Tampilan & Tema",
-    "system_settings": "Konfigurasi Umum Sistem",
-    "system.document": "Format & Template Surat",
-    "system.finance": "Pagu & Keuangan Sistem",
-    "system.insurance": "Pengaturan Asuransi",
-    "system.category": "Kategori Organisasi",
+    "admin": "Super Admin: Akses Penuh",
+    "admin.dashboard": "Admin: Dashboard Admin",
+    "admin.profile": "Admin: Profil Admin",
+    "admin.audit": "Admin: Log & Audit Trail",
+    "rbac.roles": "Admin: Manajemen Role & Hak Akses",
+    "rbac.users": "Admin: Manajemen Pengguna (RBAC)",
+    "system.pmb": "Admin: PMB (Penerimaan Mahasiswa Baru)",
+    "system.database": "⛔ Super Admin: Database Sistem",
+    "system.docs": "Admin: Dokumentasi Sistem",
+    "system.news": "Admin: Berita & Pengumuman",
+    "system.landing": "Admin: Pengaturan Landing Page",
+    "system.theme": "Admin: Pengaturan Tampilan & Tema",
+    "system_settings": "Admin: Konfigurasi Umum Sistem",
+    "system.document": "Admin: Format & Template Surat",
+    "system.finance": "Admin: Pagu & Keuangan Sistem",
+    "system.insurance": "Admin: Pengaturan Asuransi",
+    "system.category": "Admin: Kategori Organisasi",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Akademik & Fakultas
     // ═══════════════════════════════════════════════════════
-    "faculty.dashboard": "Dashboard Fakultas",
-    "students": "Data Mahasiswa (Master)",
-    "faculty": "Data Fakultas (Master)",
-    "program_studi": "Data Program Studi (Master)",
-    "dosen": "Data Dosen (Master)",
-    "akademik": "Periode Akademik",
-    "faculty_report": "Laporan Fakultas",
-    "faculty_profile": "Profil Fakultas",
-    "prodi_users": "Akun Pengguna Prodi",
-    "faculty_settings": "Pengaturan Fakultas",
-    "faculty_rbac": "Role & Akses Fakultas (RBAC)",
+    "faculty.dashboard": "Fakultas: Dashboard",
+    "students": "Admin: Data Mahasiswa (Master)",
+    "faculty": "Admin: Data Fakultas (Master)",
+    "program_studi": "Admin: Data Program Studi (Master)",
+    "dosen": "Admin: Data Dosen (Master)",
+    "akademik": "Admin: Periode Akademik",
+    "faculty_report": "Fakultas: Laporan Akademik",
+    "faculty_profile": "Fakultas: Profil Institusi",
+    "prodi_users": "Fakultas: Akun Pengguna Prodi",
+    "faculty_settings": "Fakultas: Pengaturan Fakultas",
+    "faculty_rbac": "Fakultas: Role & Akses (RBAC)",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Kemahasiswaan
     // ═══════════════════════════════════════════════════════
-    "scholarship": "Beasiswa (Kelola Admin)",
-    "achievement": "Prestasi (Kelola Admin)",
-    "aspiration": "Aspirasi (Kelola Admin)",
-    "faculty.scholarship": "Beasiswa (Monitor Fakultas)",
-    "faculty.achievement": "Prestasi (Monitor Fakultas)",
-    "faculty.aspiration": "Aspirasi (Monitor Fakultas)",
+    "scholarship": "Admin: Kelola Beasiswa",
+    "achievement": "Admin: Kelola Prestasi",
+    "aspiration": "Admin: Kelola Aspirasi",
+    "faculty.scholarship": "Fakultas: Monitor Beasiswa",
+    "faculty.achievement": "Fakultas: Monitor Prestasi",
+    "faculty.aspiration": "Fakultas: Monitor Aspirasi",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Ormawa
     // ═══════════════════════════════════════════════════════
-    "ormawa.core": "Dashboard Ormawa",
-    "ormawa.structure": "Struktur Organisasi Ormawa",
-    "ormawa.members": "Anggota & Pengurus Ormawa",
-    "ormawa.events": "Kegiatan & Kalender Ormawa",
-    "ormawa.attendance": "Absensi Kegiatan Ormawa",
-    "ormawa.finance": "Keuangan Kas Ormawa",
-    "ormawa.proposals": "Proposal Kegiatan Ormawa",
-    "ormawa.lpj": "Laporan LPJ Ormawa",
-    "ormawa.announcements": "Pengumuman Ormawa",
-    "ormawa.aspirations": "Aspirasi & Pengaduan Ormawa",
-    "ormawa.recruitment": "Open Recruitment Ormawa",
-    "ormawa.notifications": "Notifikasi Ormawa",
-    "ormawa.kencana": "PKKMB / Kencana Ormawa",
-    "ormawa.rbac": "Role & Akses Ormawa (RBAC)",
-    "ormawa.settings": "Pengaturan Ormawa",
-    "ormawa.gamifikasi": "Gamifikasi & Poin Ormawa",
-    "ormawa.pagu": "Pagu Keuangan Ormawa",
-    "faculty_ormawa": "Ormawa (Monitor Fakultas)",
-    "faculty_proposal": "Proposal Ormawa (Monitor Fakultas)",
+    "ormawa.core": "Ormawa: Dashboard",
+    "ormawa.structure": "Ormawa: Struktur Organisasi",
+    "ormawa.members": "Ormawa: Anggota & Pengurus",
+    "ormawa.events": "Ormawa: Kegiatan & Kalender",
+    "ormawa.attendance": "Ormawa: Absensi Kegiatan",
+    "ormawa.finance": "Ormawa: Keuangan Kas",
+    "ormawa.proposals": "Ormawa: Proposal Kegiatan",
+    "ormawa.lpj": "Ormawa: Laporan LPJ",
+    "ormawa.announcements": "Ormawa: Pengumuman",
+    "ormawa.aspirations": "Ormawa: Aspirasi & Pengaduan",
+    "ormawa.recruitment": "Ormawa: Open Recruitment",
+    "ormawa.notifications": "Ormawa: Notifikasi",
+    "ormawa.kencana": "Ormawa: PKKMB / Kencana",
+    "ormawa.rbac": "Ormawa: Role & Akses (RBAC)",
+    "ormawa.settings": "Ormawa: Pengaturan",
+    "ormawa.gamifikasi": "Ormawa: Gamifikasi & Poin",
+    "ormawa.pagu": "Ormawa: Pagu Keuangan",
+    "faculty_ormawa": "Fakultas: Monitor Ormawa",
+    "faculty_proposal": "Fakultas: Monitor Proposal Ormawa",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Klinik & Psikologi
     // ═══════════════════════════════════════════════════════
-    "psychologist.dashboard": "Dashboard Psikolog",
-    "psychologist.patients": "Data Pasien (Psikolog)",
-    "psychologist.bookings": "Jadwal Konseling (Psikolog)",
-    "psychologist.medical_records": "Rekam Medis (Psikolog)",
-    "psychologist.referrals": "Rujukan (Psikolog)",
-    "psychologist.schedules": "Jadwal Praktik (Psikolog)",
-    "psychologist.reports": "Laporan (Psikolog)",
-    "psychologist.notifications": "Notifikasi (Psikolog)",
-    "psychologist.settings": "Pengaturan (Psikolog)",
-    "health.dashboard": "Dashboard Klinik Kesehatan",
-    "health.bookings": "Jadwal Kunjungan (Klinik)",
-    "health.schedules": "Jadwal Praktik (Klinik)",
-    "health.patients": "Data Pasien (Klinik)",
-    "health.medical_records": "Rekam Medis (Klinik)",
-    "health.bap": "Berita Acara Pemeriksaan (Klinik)",
-    "health.reports": "Laporan (Klinik)",
-    "health_claims": "Klaim Asuransi Kesehatan",
-    "faculty_health": "Kesehatan (Monitor Fakultas)",
-    "faculty.counseling": "Data Konseling (Monitor Fakultas)",
+    "psychologist.dashboard": "Psikolog: Dashboard",
+    "psychologist.patients": "Psikolog: Data Pasien",
+    "psychologist.bookings": "Psikolog: Jadwal Konseling",
+    "psychologist.medical_records": "Psikolog: Rekam Medis",
+    "psychologist.referrals": "Psikolog: Rujukan",
+    "psychologist.schedules": "Psikolog: Jadwal Praktik",
+    "psychologist.reports": "Psikolog: Laporan",
+    "psychologist.notifications": "Psikolog: Notifikasi",
+    "psychologist.settings": "Psikolog: Pengaturan",
+    "health.dashboard": "Klinik: Dashboard Kesehatan",
+    "health.bookings": "Klinik: Jadwal Kunjungan",
+    "health.schedules": "Klinik: Jadwal Praktik",
+    "health.patients": "Klinik: Data Pasien",
+    "health.medical_records": "Klinik: Rekam Medis",
+    "health.bap": "Klinik: Berita Acara Pemeriksaan",
+    "health.reports": "Klinik: Laporan",
+    "health_claims": "Klinik: Klaim Asuransi",
+    "faculty_health": "Fakultas: Monitor Kesehatan",
+    "faculty.counseling": "Fakultas: Monitor Konseling",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Kencana (PKKMB)
     // ═══════════════════════════════════════════════════════
-    "kencana.dashboard": "Dashboard Kencana",
-    "kencana.announcement": "Pengumuman Kencana",
-    "kencana.timeline": "Timeline Kegiatan Kencana",
-    "kencana.pre_kencana": "Pra-Kencana (Persiapan)",
-    "kencana.university": "Kencana Tingkat Universitas",
-    "kencana.faculty_stages": "Kencana Tingkat Fakultas",
-    "kencana.score_summary": "Rekap Nilai Kencana",
-    "kencana.scores": "Penilaian Kencana",
-    "kencana.banding": "Banding Nilai Kencana",
-    "kencana.remedials": "Remedial Kencana",
-    "kencana.certificates": "Sertifikat Kencana",
-    "kencana.participants": "Data Peserta Kencana",
-    "kencana.groups": "Kelompok Kencana",
-    "kencana.mentors": "Data Mentor Kencana",
-    "kencana.mentor": "Portal Mentor Kencana",
-    "kencana.attendance": "Kehadiran Kencana",
-    "kencana.handbook": "Buku Panduan Kencana",
-    "kencana.notifications": "Notifikasi Kencana",
-    "kencana.settings": "Pengaturan Kencana",
-    "kencana.faculty": "Monitor Kencana (Fakultas)",
+    "kencana.dashboard": "Kencana (Admin): Dashboard",
+    "kencana.announcement": "Kencana (Admin): Pengumuman",
+    "kencana.timeline": "Kencana (Admin): Timeline Kegiatan",
+    "kencana.pre_kencana": "Kencana (Admin): Pra-Kencana",
+    "kencana.university": "Kencana (Admin): Tingkat Universitas",
+    "kencana.faculty_stages": "Kencana (Admin): Tingkat Fakultas",
+    "kencana.score_summary": "Kencana (Admin): Rekap Nilai",
+    "kencana.scores": "Kencana (Admin): Penilaian",
+    "kencana.banding": "Kencana (Admin): Banding Nilai",
+    "kencana.remedials": "Kencana (Admin): Remedial",
+    "kencana.certificates": "Kencana (Admin): Sertifikat",
+    "kencana.participants": "Kencana (Admin): Data Peserta",
+    "kencana.groups": "Kencana (Admin): Kelompok",
+    "kencana.mentors": "Kencana (Admin): Data Mentor",
+    "kencana.mentor": "Kencana (Mentor): Portal Utama",
+    "kencana_mentor": "Kencana (Mentor): Portal Utama",
+    "kencana.attendance": "Kencana (Admin): Kehadiran",
+    "kencana.handbook": "Kencana (Admin): Buku Panduan",
+    "kencana.notifications": "Kencana (Admin): Notifikasi",
+    "kencana.settings": "Kencana (Admin): Pengaturan",
+    "kencana.faculty": "Fakultas: Monitor Kencana",
 
     // ═══════════════════════════════════════════════════════
     // MODULE: Portal Mahasiswa
     // ═══════════════════════════════════════════════════════
-    "student.dashboard": "Dashboard Mahasiswa",
-    "student.profile": "Profil Mahasiswa",
-    "student.kencana": "Kencana PKKMB (Mahasiswa)",
-    "student_kencana": "Kencana PKKMB (Mahasiswa)",
-    "student.achievement": "Prestasi (Akses Mahasiswa)",
-    "student.organisasi": "Organisasi (Akses Mahasiswa)",
-    "student.organizations": "Organisasi (Akses Mahasiswa)",
-    "student.health": "Kesehatan (Akses Mahasiswa)",
-    "student.health.records": "Rekam Medis (Akses Mahasiswa)",
-    "student.health.bookings": "Jadwal Kunjungan (Akses Mahasiswa)",
-    "student.counseling": "Konseling (Akses Mahasiswa)",
-    "student.scholarship": "Beasiswa (Akses Mahasiswa)",
-    "student.voice": "Aspirasi (Akses Mahasiswa)",
-    "student.aspirations": "Aspirasi (Akses Mahasiswa)",
-    "student.insurance": "Asuransi (Akses Mahasiswa)",
-    "student.presensi": "Presensi Kegiatan (Akses Mahasiswa)",
+    "student": "Mahasiswa: Portal Utama",
+    "student.dashboard": "Mahasiswa: Dashboard",
+    "student.profile": "Mahasiswa: Profil",
+    "student.kencana": "Mahasiswa: Kencana PKKMB",
+    "student_kencana": "Mahasiswa: Kencana PKKMB",
+    "student.achievement": "Mahasiswa: Prestasi",
+    "student.organisasi": "Mahasiswa: Organisasi",
+    "student.organizations": "Mahasiswa: Organisasi",
+    "student.health": "Mahasiswa: Kesehatan",
+    "student.health.records": "Mahasiswa: Rekam Medis",
+    "student.health.bookings": "Mahasiswa: Jadwal Kunjungan",
+    "student.counseling": "Mahasiswa: Konseling",
+    "student.scholarship": "Mahasiswa: Beasiswa",
+    "student.voice": "Mahasiswa: Suara Mahasiswa",
+    "student.aspirations": "Mahasiswa: Aspirasi",
+    "student.insurance": "Mahasiswa: Asuransi",
+    "student.presensi": "Mahasiswa: Presensi Kegiatan",
 
-    // ═══════════════════════════════════════════════════════
-    // MODULE: Integrasi & Sinkronisasi
-    // ═══════════════════════════════════════════════════════
     // (Reuse existing prefixes — these will be grouped under
     //  the "Integrasi" tab when they appear in that catalog module)
   };
@@ -245,8 +245,19 @@ export default function RoleManagement() {
         const rawCatalog = payload.catalog || [];
         const migratedCatalog = rawCatalog.map(module => ({
           ...module,
-          items: [...new Set(module.items.map(p => migratePermission(p)))]
-        }));
+          items: [...new Set(module.items.map(p => migratePermission(p)))].filter(p => {
+            if (!p) return false;
+            const lower = p.toLowerCase();
+            if (p === '*') return false;
+            return !lower.includes('pengaturan') && 
+                   !lower.includes('settings') && 
+                   !lower.includes('notifikasi') && 
+                   !lower.includes('notifications') &&
+                   !lower.includes('profil') &&
+                   !lower.includes('profile') &&
+                   p !== '*';
+          })
+        })).filter(module => module.items.length > 0);
 
         setPermissionCatalog(migratedCatalog);
         if (migratedCatalog.length > 0 && !activeTab) {
@@ -502,7 +513,12 @@ export default function RoleManagement() {
                     <h3 className="font-bold text-slate-800 text-lg border-b border-slate-100 pb-2">Permissions</h3>
 
                     <div className="space-y-4">
-                      {groupPermissionsByFeature(activeGroup.items || []).map(group => (
+                      
+                      {groupPermissionsByFeature((activeGroup.items || []).filter(item => {
+                        const hiddenPrefixes = ['notifications', 'system.settings'];
+                        return !hiddenPrefixes.some(prefix => item.startsWith(prefix));
+                      })).map(group => (
+
                         <div key={group.prefix} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
                           <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                             <h4 className="font-bold text-sm text-slate-800">{group.name}</h4>
@@ -612,7 +628,17 @@ export default function RoleManagement() {
           return <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">Akses Penuh (Full Access)</span>;
         }
 
-        const grouped = groupPermissionsByFeature(r.permissions);
+        const filteredPerms = (r.permissions || []).filter(p => {
+          if (!p) return false;
+          const lower = p.toLowerCase();
+          return !lower.includes('pengaturan') && 
+                 !lower.includes('settings') && 
+                 !lower.includes('notifikasi') && 
+                 !lower.includes('notifications') &&
+                 !lower.includes('profil') &&
+                 !lower.includes('profile');
+        });
+        const grouped = groupPermissionsByFeature(filteredPerms);
         const displayLimit = 2;
         const toShow = grouped.slice(0, displayLimit);
         const remaining = grouped.length - displayLimit;

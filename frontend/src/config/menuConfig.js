@@ -230,8 +230,8 @@ export const MENU_ITEMS = [
           { name: 'EMR', icon: 'medical_information', path: '/app/kesehatan/emr', permission: P.KESEHATAN_RECORD_MANAGE },
           { name: 'Tindak Lanjut & Rujukan', icon: 'forward_to_inbox', path: '/app/kesehatan/referrals', permission: P.KESEHATAN_REFERRAL_VIEW },
           { name: 'Laporan Klinik', icon: 'analytics', path: '/app/kesehatan/reports', permission: P.KESEHATAN_REPORT_VIEW },
-          { name: 'Notifikasi', icon: 'notifications', path: '/app/kesehatan/notifications', permission: P.KESEHATAN_DASHBOARD_VIEW },
-          { name: 'Edit Profile', icon: 'settings', path: '/app/kesehatan/settings', permission: P.KESEHATAN_SETTINGS_VIEW },
+          { name: 'Notifikasi', icon: 'notifications', path: '/app/kesehatan/notifications'},
+          { name: 'Edit Profile', icon: 'settings', path: '/app/kesehatan/settings'},
         ],
       }
     ],
@@ -352,9 +352,9 @@ export const MENU_ITEMS = [
     group: 'LAINNYA',
     module: 'core',
     items: [
-      { name: 'Notifikasi', icon: 'notifications', path: '/app/notifications', permission: P.NOTIFICATIONS_VIEW },
-      { name: 'Profil', icon: 'account_circle', path: '/app/profile', permission: P.PROFILE_VIEW },
-      { name: 'Pengaturan Sistem', icon: 'settings', path: '/app/sistem/pengaturan', permission: P.SETTINGS_VIEW },
+      { name: 'Notifikasi', icon: 'notifications', path: '/app/notifications'},
+      { name: 'Profil', icon: 'account_circle', path: '/app/profile',  },
+      { name: 'Pengaturan Sistem', icon: 'settings', path: '/app/sistem/pengaturan'},
     ],
   },
 ];
