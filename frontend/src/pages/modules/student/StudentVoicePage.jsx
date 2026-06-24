@@ -7,7 +7,9 @@ import {
   useCreateVoiceMutation,
   useCancelVoiceMutation
 } from '@/queries/useStudentVoiceQuery';
-import { PageContent, PageHeader } from '@/components/ui/page';
+import { PageContent } from '@/components/ui/page';
+import { DashboardHero } from '@/components/ui/dashboard';
+import DataTable from '@/components/ui/DataTable';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -39,7 +41,7 @@ export default function StudentVoicePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [page, setPage] = useState(1);
   const { hasPermission } = usePermission();
-  const canManageAspiration = hasPermission('aspiration.create') || hasPermission('aspiration.manage');
+  const canManageAspiration = hasPermission('aspiration.create') || hasPermission('aspiration.manage') || hasPermission('student.aspirations.create');
   const navigate = useNavigate();
   
   // Queries
@@ -58,177 +60,116 @@ export default function StudentVoicePage() {
 
   return (
     <PageContent className="font-body">
-      <PageHeader 
-        title="Suara Mahasiswa"
-        subtitle="Sampaikan aspirasi, saran, dan pengaduanmu kepada kampus untuk BKU yang lebih baik."
-        icon="chat"
-        breadcrumbs={[
-          { label: 'Dashboard', path: '/app/student/dashboard' },
-          { label: 'Suara Mahasiswa', path: '/app/student/voice' }
-        ]}
-        action={
-          canManageAspiration && (
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-5 py-3 bg-[var(--theme-primary)] text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-md shadow-[var(--theme-primary)]/20 text-sm group"
-            >
-              <span className="material-symbols-outlined group-hover:rotate-90 transition-transform duration-300" style={{ fontSize: '18px' }}>add</span>
-              Sampaikan Aspirasi Baru
-            </button>
-          )
-        }
-      />
-
       <div className="max-w-7xl mx-auto">
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {isStatsLoading ? (
-            [...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)
-          ) : (
-            <>
-              <StatCard label="Total Diajukan" value={stats?.total || 0} color="border-border" icon={<span className="material-symbols-outlined text-[var(--theme-primary)]" style={{ fontSize: '18px' }} >chat</span>} bg="bg-surface" />
-              <StatCard label="Di Fakultas" value={stats?.di_fakultas || 0} color="border-primary/20" icon={<span className="material-symbols-outlined text-[var(--theme-primary)]" style={{ fontSize: '18px' }} >schedule</span>} bg="bg-primary/5" />
-              <StatCard label="Di Universitas" value={stats?.di_universitas || 0} color="border-secondary/20" icon={<span className="material-symbols-outlined text-secondary" style={{ fontSize: '18px' }}>security</span>} bg="bg-secondary/5" />
-              <StatCard label="Selesai" value={stats?.selesai || 0} color="border-success/20" icon={<span className="material-symbols-outlined text-success" style={{ fontSize: '20px' }} >check_circle</span>} bg="bg-success/5" />
-            </>
-          )}
-        </div>
+        <DashboardHero
+          title="Suara Mahasiswa"
+          subtitle="Sampaikan aspirasi, saran, dan pengaduanmu kepada kampus untuk BKU yang lebih baik."
+          icon="campaign"
+          theme="primary"
+          stats={[
+            { label: 'Total Diajukan', value: stats?.total || 0, icon: 'chat' },
+            { label: 'Di Fakultas', value: stats?.di_fakultas || 0, icon: 'domain' },
+            { label: 'Di Universitas', value: stats?.di_universitas || 0, icon: 'account_balance' },
+            { label: 'Selesai', value: stats?.selesai || 0, icon: 'check_circle' },
+          ]}
+          actions={
+            canManageAspiration && (
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center justify-center gap-2 px-5 py-3 bg-[var(--theme-primary)] text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-md shadow-[var(--theme-primary)]/20 text-sm group cursor-pointer"
+              >
+                <span className="material-symbols-outlined group-hover:rotate-90 transition-transform duration-300" style={{ fontSize: '18px' }}>add</span>
+                Sampaikan Aspirasi Baru
+              </button>
+            )
+          }
+        />
 
         {/* List Section */}
-        <div className="glass-card overflow-hidden mb-8">
-          <div className="px-6 py-5 border-b border-[var(--theme-border-muted)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[var(--theme-primary-light)]/80 rounded-xl flex justify-center items-center text-[var(--theme-primary)]">
-                <span className="material-symbols-outlined text-[24px]">history</span>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest block mb-0.5">Riwayat</span>
-                <h2 className="text-sm font-bold text-[var(--theme-text)] leading-tight">Aspirasi Kamu</h2>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest">Total Tiket</span>
-              <span className="text-sm font-extrabold text-[var(--theme-primary)] px-2.5 py-0.5 rounded-md bg-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/20 shadow-sm">
-                {listData?.total || 0}
-              </span>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-[var(--theme-border-muted)] bg-[var(--theme-bg)]/50">
-                  <th className="px-6 py-3.5 text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider whitespace-nowrap">Nomor Tiket</th>
-                  <th className="px-6 py-3.5 text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider whitespace-nowrap">Kategori & Judul</th>
-                  <th className="px-6 py-3.5 text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider whitespace-nowrap text-center">Level Unit</th>
-                  <th className="px-6 py-3.5 text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider whitespace-nowrap text-center">Status</th>
-                  <th className="px-6 py-3.5 text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider whitespace-nowrap text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--theme-border-muted)]">
-                {isListLoading ? (
-                  [...Array(5)].map((_, i) => (
-                    <tr key={i}>
-                      <td colSpan="5" className="px-6 py-4"><Skeleton className="h-12 w-full rounded-xl" /></td>
-                    </tr>
-                  ))
-                ) : listData?.list?.length > 0 ? (
-                  listData.list.map((row) => (
-                    <tr key={row.id} className="group hover:bg-[var(--theme-bg)] transition-colors cursor-pointer" onClick={() => navigate(`/app/student/voice/tiket/${row.id}`)}>
-                      <td className="px-6 py-4 align-top">
-                        <div className="font-black text-[var(--theme-text)]">{row.nomor_tiket}</div>
-                        <div className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-tighter mt-1">
-                          {new Date(row.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-top max-w-sm">
-                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                          <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${getCategoryStyle(row.kategori)}`}>
-                            {row.kategori}
-                          </span>
-                          {row.is_anonim && (
-                            <span className="flex items-center gap-1 text-[8px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest bg-[var(--theme-bg)] border border-[var(--theme-border-muted)] px-2 py-0.5 rounded-md">
-                              <span className="material-symbols-outlined opacity-40" style={{ fontSize: '10px' }} strokeWidth={3}>visibility</span> Anonim
-                            </span>
-                          )}
-                        </div>
-                        <div className="font-bold text-[var(--theme-text)] line-clamp-2 leading-relaxed">{row.judul}</div>
-                      </td>
-                      <td className="px-6 py-4 align-top text-center">
-                        <LevelBadge level={row.level_saat_ini} />
-                      </td>
-                      <td className="px-6 py-4 align-top text-center">
-                        <StatusBadge status={row.status} />
-                      </td>
-                      <td className="px-6 py-4 align-top">
-                        <div className="flex items-center justify-end gap-2">
-                          {row.status === 'menunggu' && row.level_saat_ini === 'fakultas' && canManageAspiration && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCancelTicket(row.id);
-                              }}
-                              className="w-9 h-9 rounded-xl bg-[var(--theme-error-light)] text-[var(--theme-error)] border border-[var(--theme-error-light)] flex items-center justify-center hover:bg-[var(--theme-error)] hover:text-[var(--theme-text-on-primary)] transition-all shadow-sm"
-                              title="Batalkan Aspirasi"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
-                            </button>
-                          )}
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/app/student/voice/tiket/${row.id}`);
-                            }}
-                            className="w-9 h-9 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] flex items-center justify-center text-[var(--theme-primary)] hover:bg-[var(--theme-primary)] hover:text-white transition-all shadow-sm group-hover:border-[var(--theme-primary)]/30"
-                          >
-                            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>arrow_forward</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <div className="w-16 h-16 bg-[var(--theme-bg)] rounded-2xl flex items-center justify-center text-[var(--theme-text-muted)] mb-2">
-                          <span className="material-symbols-outlined text-[32px]">help</span>
-                        </div>
-                        <p className="text-sm font-bold text-[var(--theme-text)]">Belum Ada Aspirasi</p>
-                        <p className="text-[11px] font-semibold text-[var(--theme-text-muted)]">Kamu belum pernah mengirim aspirasi.</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {listData?.total > 10 && (
-            <div className="px-6 py-4 border-t border-[var(--theme-border-muted)] bg-[var(--theme-bg)]/30 flex items-center justify-between">
-              <span className="text-xs font-semibold text-[var(--theme-text-muted)]">
-                Menampilkan {(page - 1) * 10 + 1}-{Math.min(page * 10, listData?.total || 0)} dari {listData?.total || 0} tiket
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page === 1}
-                  className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-[var(--theme-surface)] border border-[var(--theme-border)] text-[var(--theme-text)] disabled:opacity-40 hover:bg-[var(--theme-bg)] transition-colors"
+        <div className="glass-card rounded-3xl p-6 md:p-8 mb-8 border-0 shadow-xl overflow-hidden">
+          <DataTable
+            columns={[
+              {
+                key: 'nomor_tiket',
+                label: 'Nomor Tiket',
+                render: (_, row) => (
+                  <div>
+                    <div className="font-black text-[var(--theme-text)]">{row.nomor_tiket}</div>
+                    <div className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-tighter mt-1">
+                      {new Date(row.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </div>
+                  </div>
+                )
+              },
+              {
+                key: 'kategori_judul',
+                label: 'Kategori & Judul',
+                render: (_, row) => (
+                  <div className="max-w-sm">
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                      <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${getCategoryStyle(row.kategori)}`}>
+                        {row.kategori}
+                      </span>
+                      {row.is_anonim && (
+                        <span className="flex items-center gap-1 text-[8px] font-black text-[var(--theme-text-muted)] uppercase tracking-widest bg-[var(--theme-bg)] border border-[var(--theme-border-muted)] px-2 py-0.5 rounded-md">
+                          <span className="material-symbols-outlined opacity-40" style={{ fontSize: '10px' }} strokeWidth={3}>visibility</span> Anonim
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-bold text-[var(--theme-text)] line-clamp-2 leading-relaxed">{row.judul}</div>
+                  </div>
+                )
+              },
+              {
+                key: 'level_saat_ini',
+                label: 'Level Unit',
+                align: 'center',
+                render: (_, row) => <LevelBadge level={row.level_saat_ini} />
+              },
+              {
+                key: 'status',
+                label: 'Status',
+                align: 'center',
+                render: (_, row) => <StatusBadge status={row.status} />
+              }
+            ]}
+            data={listData?.list || []}
+            loading={isListLoading}
+            totalData={listData?.total || 0}
+            currentPage={page}
+            pageSize={10}
+            onPageChange={setPage}
+            serverPagination
+            onRowClick={(row) => navigate(`/student/voice/tiket/${row.id}`)}
+            actions={(row) => (
+              row.status === 'menunggu' && row.level_saat_ini === 'fakultas' && canManageAspiration ? (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCancelTicket(row.id);
+                  }}
+                  className="w-7 h-7 rounded-lg bg-[var(--theme-error-light)] text-[var(--theme-error)] flex items-center justify-center hover:bg-[var(--theme-error)] hover:text-white transition-all shadow-sm cursor-pointer"
+                  title="Batalkan Aspirasi"
                 >
-                  Sebelumnya
+                  <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
                 </button>
-                <button
-                  onClick={() => setPage(page + 1)}
-                  disabled={page * 10 >= (listData?.total || 0)}
-                  className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-[var(--theme-surface)] border border-[var(--theme-border)] text-[var(--theme-text)] disabled:opacity-40 hover:bg-[var(--theme-bg)] transition-colors"
-                >
-                  Berikutnya
-                </button>
+              ) : null
+            )}
+            searchable={false}
+            title={
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-[var(--theme-primary-light)]/80 rounded-2xl flex justify-center items-center text-[var(--theme-primary)] border border-[var(--theme-primary)]/20 shadow-inner">
+                  <span className="material-symbols-outlined text-[24px]">history</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-[var(--theme-primary)] uppercase tracking-widest block mb-0.5">Riwayat</span>
+                  <h2 className="text-lg md:text-xl font-black text-[var(--theme-text)] leading-tight">Aspirasi Kamu</h2>
+                </div>
               </div>
-            </div>
-          )}
+            }
+            emptyMessage="Kamu belum pernah mengirim aspirasi."
+            emptyIcon="help"
+          />
         </div>
       </div>
 
@@ -238,20 +179,6 @@ export default function StudentVoicePage() {
         )}
       </AnimatePresence>
     </PageContent>
-  );
-}
-
-function StatCard({ label, value, color, icon, bg = 'bg-surface' }) {
-  return (
-    <div className={`${bg} rounded-2xl border ${color} p-4 flex items-center gap-3 shadow-sm`}>
-      <div className="w-10 h-10 bg-surface/70 backdrop-blur-md rounded-xl flex items-center justify-center border border-inherit shadow-inner">
-        {icon}
-      </div>
-      <div>
-        <h4 className="text-2xl font-black text-bku-text leading-none mb-0.5">{value}</h4>
-        <p className="text-[10px] font-black text-text-muted uppercase tracking-wide">{label}</p>
-      </div>
-    </div>
   );
 }
 
@@ -332,29 +259,29 @@ function CreateAspirasiModal({ onClose }) {
 
   return (
     <Dialog open={true} onOpenChange={onClose} maxWidth="max-w-3xl">
-      <DialogContent className="max-w-3xl p-0 overflow-hidden border border-border shadow-2xl rounded-2xl bg-surface animate-in zoom-in-95 duration-200">
-        <DialogHeader className="p-8 pb-5 bg-slate-50/50 border-b border-border relative">
-          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-            <span className="material-symbols-outlined size-24 rotate-12 text-slate-800">chat</span>
+      <DialogContent className="p-0 overflow-hidden glass-card rounded-3xl border-0 shadow-2xl">
+        <DialogHeader className="p-8 pb-6 border-b border-[var(--theme-border-muted)] bg-[var(--theme-bg)]/50 relative">
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+            <span className="material-symbols-outlined text-8xl text-[var(--theme-primary)]">chat</span>
           </div>
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-1.5">
-              <div className="size-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>chat</span>
-              </div>
-              <Badge className="text-[9px] font-black tracking-widest px-2.5 py-0.5 bg-slate-200 text-slate-700 border-none rounded-md">ASPIRASI BARU</Badge>
+          <div className="text-left relative z-10 flex gap-4 items-start">
+            <div className="w-14 h-14 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-2xl flex items-center justify-center shrink-0 border border-[var(--theme-primary)]/20 shadow-inner">
+               <span className="material-symbols-outlined" style={{ fontSize: 28 }}>campaign</span>
             </div>
-            <DialogTitle className="text-lg md:text-xl font-black font-headline tracking-tighter text-slate-900">
-              Sampaikan Aspirasimu
-            </DialogTitle>
-            <DialogDescription className="text-[11px] font-semibold text-slate-400 mt-0.5">
-              Gunakan kata-kata yang bijak & membangun untuk BKU yang lebih baik.
-            </DialogDescription>
+            <div>
+              <p className="text-[10px] font-black text-[var(--theme-primary)] uppercase tracking-widest mb-1">Aspirasi Baru</p>
+              <DialogTitle className="text-xl md:text-2xl font-black mt-1 text-[var(--theme-text)] leading-tight tracking-tight">
+                Sampaikan Aspirasimu
+              </DialogTitle>
+              <DialogDescription className="text-xs font-bold text-[var(--theme-text-muted)] mt-2">
+                Gunakan kata-kata yang bijak & membangun untuk BKU yang lebih baik.
+              </DialogDescription>
+            </div>
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col">
-          <div className="p-8 pt-5 space-y-5 max-h-[50vh] overflow-y-auto no-scrollbar">
+        <form onSubmit={handleSubmit} className="flex flex-col max-h-[85vh]">
+          <div className="p-5 sm:p-8 overflow-y-auto space-y-5 text-left bg-white">
             {/* Category Selector */}
             <div className="space-y-3">
               <label className="text-[10px] font-black text-slate-400 tracking-[0.2em] ml-1 uppercase font-headline">Pilih Kategori</label>
@@ -481,30 +408,18 @@ function CreateAspirasiModal({ onClose }) {
             </div>
           </div>
 
-          <DialogFooter className="flex flex-col md:flex-row items-center justify-end gap-3 p-8 pt-4 border-t border-slate-100 bg-slate-50/30">
-            <Button 
-              type="button" 
-              variant="ghost" 
-              onClick={onClose}
-              className="w-full md:w-auto text-[10px] font-black tracking-widest text-slate-400 hover:text-slate-900 px-8 h-11 rounded-xl active:scale-95 transition-all shadow-none border-none cursor-pointer font-headline uppercase"
-            >
+          <div className="p-5 sm:p-6 border-t border-[var(--theme-border-muted)] bg-[var(--theme-bg)] shrink-0 flex gap-3">
+            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-[var(--theme-border)] text-[var(--theme-text-muted)] text-xs font-black hover:bg-[var(--theme-bg)] transition-colors cursor-pointer bg-[var(--theme-surface)] uppercase tracking-wider">
               Batal
-            </Button>
-            <Button 
-              type="submit"
-              disabled={createMutation.isPending || formData.judul === '' || formData.isi.length < 50}
-              className="w-full md:w-auto h-11 px-8 rounded-xl bg-primary text-white hover:bg-primary/95 shadow-xl shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2 border-none cursor-pointer font-black text-[10px]"
+            </button>
+            <button 
+              type="submit" 
+              disabled={createMutation.isPending || formData.judul === '' || formData.isi.length < 50} 
+              className="flex-1 py-3 rounded-xl bg-[var(--theme-primary)] text-white text-xs font-black hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider border-none shadow-md shadow-[var(--theme-primary)]/20"
             >
-              {createMutation.isPending ? (
-                <span className="material-symbols-outlined animate-spin size-4" style={{ fontSize: '15px' }}>sync</span>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>send</span>
-                  <span className="text-[10px] font-black tracking-widest uppercase">Kirim Aspirasi</span>
-                </>
-              )}
-            </Button>
-          </DialogFooter>
+              {createMutation.isPending ? 'Mengirim...' : 'Kirim Aspirasi'}
+            </button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

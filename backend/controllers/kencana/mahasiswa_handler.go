@@ -41,11 +41,6 @@ func GetDashboard(c *fiber.Ctx) error {
 		activeStage = fiber.Map{"id": stage.ID, "name": stage.Name, "type": stage.Type}
 	}
 
-	scopeType := "university"
-	if stage.ID != 0 && stage.Type == "kencana_fakultas" {
-		scopeType = "faculty"
-	}
-
 	lastActivity := findLastActivity(period.ID, student)
 	return c.JSON(fiber.Map{"success": true, "data": fiber.Map{
 		"period":                fiber.Map{"id": period.ID, "name": period.Name, "year": period.Year, "description": period.Description, "start_date": period.StartDate, "end_date": period.EndDate},
@@ -62,15 +57,27 @@ func GetDashboard(c *fiber.Ctx) error {
 		"score_fakultas":        scoreFakultas,
 		"status_univ":           scoreUniv.GraduationStatus,
 		"status_fakultas":       scoreFakultas.GraduationStatus,
-		
 		"certificates":          fetchStudentCertificates(config.DB, period.ID, student.ID),
 
 		"last_activity":         lastActivity,
 		"blockers":              blockersUniv,
 		"notifications":         importantNotifications(period.ID, student.ID, blockersUniv),
-		"mentor":                activeMentorForStudent(period.ID, student.ID, scopeType),
+		"mentor":                activeMentorForStudent(period.ID, student.ID, "university"),
+		"mentor_fakultas":       activeMentorForStudent(period.ID, student.ID, "faculty"),
+		"has_pending_invitation": hasPendingInvitation(period.ID, student.ID),
 		"weights":               fiber.Map{"cognitive": period.CognitiveWeight, "psychomotor": period.PsychomotorWeight, "affective": period.AffectiveWeight},
 	}})
+}
+
+func hasPendingInvitation(periodID, studentID uint) bool {
+	var mentorCount int64
+	config.DB.Model(&models.KencanaMentorAssignment{}).Where("period_id = ? AND student_id = ? AND status = ?", periodID, studentID, "pending").Count(&mentorCount)
+	var groupCount int64
+	config.DB.Model(&models.KencanaGroupMember{}).
+		Joins("JOIN mahasiswa.kencana_groups ON mahasiswa.kencana_groups.id = mahasiswa.kencana_group_members.group_id").
+		Where("mahasiswa.kencana_groups.period_id = ? AND mahasiswa.kencana_group_members.student_id = ? AND mahasiswa.kencana_group_members.status = ?", periodID, studentID, "pending").
+		Count(&groupCount)
+	return mentorCount > 0 || groupCount > 0
 }
 
 func GetMentorInvitations(c *fiber.Ctx) error {
@@ -193,6 +200,29 @@ func RespondGroupInvitation(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "message": "Undangan kelompok berhasil diperbarui", "data": invitation})
 }
 
+func GetAnnouncements(c *fiber.Ctx) error {
+	student, err := currentStudent(c)
+	if err != nil {
+		return err
+	}
+	period, err := activePeriod(config.DB)
+	if err != nil {
+		return c.JSON(fiber.Map{"success": true, "data": []models.KencanaPengumuman{}})
+	}
+
+	var announcements []models.KencanaPengumuman
+	err = config.DB.Where("period_id = ? AND target_role IN ?", period.ID, []string{"mahasiswa", "both"}).
+		Where("scope_type = 'university' OR (scope_type = 'faculty' AND fakultas_id = ?)", student.FakultasID).
+		Order("created_at desc").
+		Find(&announcements).Error
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal mengambil pengumuman"})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": announcements})
+}
+
 func GetTimeline(c *fiber.Ctx) error {
 	student, err := currentStudent(c)
 	if err != nil {
@@ -217,21 +247,58 @@ func GetTimeline(c *fiber.Ctx) error {
 	var facultyPhase models.KencanaFacultyPhase
 	config.DB.Where("period_id = ? AND fakultas_id = ?", period.ID, student.FakultasID).First(&facultyPhase)
 
-	data := make([]fiber.Map, 0, len(stages))
-	for _, s := range stages {
-		payload := stagePayload(s, student.ID, student.FakultasID)
+	phaseOrder := []string{"pra_kencana", "kencana_universitas", "kencana_fakultas", "pasca_kencana"}
+	phaseNames := map[string]string{
+		"pra_kencana":         "Pra-Kencana",
+		"kencana_universitas": "University",
+		"kencana_fakultas":    "Fakultas",
+		"pasca_kencana":       "Pasca-Kencana",
+	}
 
-		phaseType := s.Type
+	data := make([]fiber.Map, 0, 4)
+	for i, phaseType := range phaseOrder {
+		var matchedStage *models.KencanaStage
+		for j := range stages {
+			if stages[j].Type == phaseType {
+				matchedStage = &stages[j]
+				break
+			}
+		}
 
-		if phaseType == "kencana_fakultas" && facultyPhase.ID != 0 {
-			if facultyPhase.StartDate != nil {
-				payload["start_date"] = facultyPhase.StartDate
+		payload := fiber.Map{
+			"id":               0,
+			"name":             phaseNames[phaseType],
+			"type":             phaseType,
+			"description":      "",
+			"status":           "inactive",
+			"start_date":       nil,
+			"end_date":         nil,
+			"session_count":    0,
+			"assignment_count": 0,
+			"quiz_count":       0,
+			"order_number":     i + 1,
+		}
+
+		if matchedStage != nil {
+			p := stagePayload(*matchedStage, student.ID, student.FakultasID)
+			for k, v := range p {
+				payload[k] = v
 			}
-			if facultyPhase.EndDate != nil {
-				payload["end_date"] = facultyPhase.EndDate
+			payload["name"] = phaseNames[phaseType] // Override name to be consistent
+		}
+
+		if phaseType == "kencana_fakultas" || phaseType == "faculty" {
+			if facultyPhase.ID != 0 {
+				if facultyPhase.StartDate != nil {
+					payload["start_date"] = facultyPhase.StartDate
+				}
+				if facultyPhase.EndDate != nil {
+					payload["end_date"] = facultyPhase.EndDate
+				}
+				payload["status"] = facultyPhase.Status
+			} else {
+				payload["status"] = "inactive"
 			}
-			payload["status"] = facultyPhase.Status
-			payload["name"] = "Kencana Fakultas"
 		} else {
 			for _, tp := range timelinePhases {
 				if tp.PhaseType == phaseType {
@@ -247,17 +314,9 @@ func GetTimeline(c *fiber.Ctx) error {
 			}
 		}
 
-		// Fix naming to match what user wants
-		if phaseType == "kencana_universitas" {
-			payload["name"] = "Kencana University"
-		} else if phaseType == "pra_kencana" {
-			payload["name"] = "Pra-Kencana"
-		} else if phaseType == "pasca_kencana" {
-			payload["name"] = "Pasca-Kencana"
-		}
-
 		data = append(data, payload)
 	}
+
 	return c.JSON(fiber.Map{"success": true, "data": fiber.Map{"period": period, "stages": data}})
 }
 
@@ -1257,20 +1316,53 @@ func StudentSubmitAttendance(c *fiber.Ctx) error {
 	}
 
 	var req struct {
-		QRCode string `json:"qr_code"`
+		SessionID     uint   `json:"session_id"`
+		Status        string `json:"status"`
+		Reason        string `json:"reason"`
+		AttachmentURL string `json:"attachment_url"`
+		QRCode        string `json:"qr_code"`
 	}
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Data tidak valid"})
 	}
 
-	if req.QRCode == "" {
-		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Kode QR wajib diisi"})
+	if req.Status == "" {
+		req.Status = "present"
 	}
 
-	// Decode JWT token from QR
-	sessionID, mentorID, err := ValidateQRToken(req.QRCode)
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Kode QR tidak valid atau sudah kedaluwarsa"})
+	validStatuses := map[string]bool{"present": true, "permission": true}
+	if !validStatuses[req.Status] {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Status presensi tidak valid"})
+	}
+
+	if req.Status == "permission" && req.Reason == "" {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Alasan izin wajib diisi"})
+	}
+
+	saveStatus := req.Status
+	if req.Status == "permission" {
+		saveStatus = "permission_requested"
+	}
+
+	sessionID := req.SessionID
+	var mentorID uint
+
+	if req.Status == "present" {
+		if req.QRCode == "" {
+			return c.Status(400).JSON(fiber.Map{"success": false, "message": "Kode QR wajib diisi"})
+		}
+
+		// Decode JWT token from QR
+		sID, mID, err := ValidateQRToken(req.QRCode)
+		if err != nil {
+			return c.Status(400).JSON(fiber.Map{"success": false, "message": "Kode QR tidak valid atau sudah kedaluwarsa"})
+		}
+		sessionID = sID
+		mentorID = mID
+	} else {
+		if sessionID == 0 {
+			return c.Status(400).JSON(fiber.Map{"success": false, "message": "Sesi wajib diisi untuk permohonan izin"})
+		}
 	}
 
 	var session models.KencanaSession
@@ -1284,51 +1376,66 @@ func StudentSubmitAttendance(c *fiber.Ctx) error {
 	}
 
 	// Isolasi Data: Pastikan mahasiswa terdaftar di bimbingan (Kelompok atau 1-on-1) mentor ini pada scope yang sesuai
-	var isAuthorized bool
+	if req.Status == "present" {
+		var isAuthorized bool
 
-	var mentorGroup models.KencanaGroup
-	if err := config.DB.Where("mentor_id = ? AND scope_type = ? AND status = ?", mentorID, scopeType, "active").First(&mentorGroup).Error; err == nil {
-		var membership models.KencanaGroupMember
-		if err := config.DB.Where("group_id = ? AND student_id = ? AND status = ?", mentorGroup.ID, student.ID, "active").First(&membership).Error; err == nil {
-			isAuthorized = true
+		var mentorGroup models.KencanaGroup
+		if err := config.DB.Where("mentor_id = ? AND scope_type = ? AND status = ?", mentorID, scopeType, "active").First(&mentorGroup).Error; err == nil {
+			var membership models.KencanaGroupMember
+			if err := config.DB.Where("group_id = ? AND student_id = ? AND status = ?", mentorGroup.ID, student.ID, "active").First(&membership).Error; err == nil {
+				isAuthorized = true
+			}
 		}
-	}
 
-	if !isAuthorized {
-		var assignment models.KencanaMentorAssignment
-		if err := config.DB.Joins("JOIN mahasiswa.kencana_mentors ON mahasiswa.kencana_mentors.id = mahasiswa.kencana_mentor_assignments.mentor_id").
-			First(&assignment, "mahasiswa.kencana_mentor_assignments.mentor_id = ? AND mahasiswa.kencana_mentor_assignments.student_id = ? AND mahasiswa.kencana_mentor_assignments.status = ? AND mahasiswa.kencana_mentors.scope_type = ?", mentorID, student.ID, "active", scopeType).Error; err == nil {
-			isAuthorized = true
+		if !isAuthorized {
+			var assignment models.KencanaMentorAssignment
+			if err := config.DB.Joins("JOIN mahasiswa.kencana_mentors ON mahasiswa.kencana_mentors.id = mahasiswa.kencana_mentor_assignments.mentor_id").
+				First(&assignment, "mahasiswa.kencana_mentor_assignments.mentor_id = ? AND mahasiswa.kencana_mentor_assignments.student_id = ? AND mahasiswa.kencana_mentor_assignments.status = ? AND mahasiswa.kencana_mentors.scope_type = ?", mentorID, student.ID, "active", scopeType).Error; err == nil {
+				isAuthorized = true
+			}
 		}
-	}
 
-	if !isAuthorized {
-		return c.Status(403).JSON(fiber.Map{"success": false, "message": "Anda tidak terdaftar sebagai bimbingan aktif dari pembimbing ini pada lingkup ini"})
+		if !isAuthorized {
+			return c.Status(403).JSON(fiber.Map{"success": false, "message": "Anda tidak terdaftar sebagai bimbingan aktif dari pembimbing ini pada lingkup ini"})
+		}
 	}
 
 	// Cek apakah presensi sudah ada
 	var existing models.KencanaAttendance
 	if err := config.DB.Where("session_id = ? AND student_id = ?", sessionID, student.ID).First(&existing).Error; err == nil {
-		if existing.Status == "present" {
+		if existing.Status == "present" || existing.Status == "permission" {
 			return c.JSON(fiber.Map{"success": true, "message": "Anda sudah melakukan presensi sebelumnya."})
 		}
 		now := time.Now().UTC()
-		existing.Status = "present"
+		existing.Status = saveStatus
+		existing.Reason = req.Reason
+		existing.AttachmentURL = req.AttachmentURL
 		existing.CheckedAt = &now
-		existing.CheckedBy = &mentorID
+		if mentorID != 0 {
+			existing.CheckedBy = &mentorID
+		}
 		config.DB.Save(&existing)
 	} else {
 		now := time.Now().UTC()
 		newAtt := models.KencanaAttendance{
-			SessionID: sessionID,
-			StudentID: student.ID,
-			Status:    "present",
-			CheckedAt: &now,
-			CheckedBy: &mentorID,
+			SessionID:     sessionID,
+			StudentID:     student.ID,
+			Status:        saveStatus,
+			Reason:        req.Reason,
+			AttachmentURL: req.AttachmentURL,
+			CheckedAt:     &now,
+		}
+		if mentorID != 0 {
+			newAtt.CheckedBy = &mentorID
 		}
 		config.DB.Create(&newAtt)
 	}
 
+	msg := "Presensi berhasil dicatat."
+	if req.Status == "permission" {
+		msg = "Permohonan izin berhasil diajukan."
+	}
+
 	logActivity(c, "kencana", "Melakukan presensi sesi Kencana")
-	return c.JSON(fiber.Map{"success": true, "message": "Presensi berhasil dicatat."})
+	return c.JSON(fiber.Map{"success": true, "message": msg})
 }

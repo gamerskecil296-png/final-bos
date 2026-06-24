@@ -24,7 +24,7 @@ export default function KencanaScorePage() {
       ]}
       actions={
         <div className="flex items-center gap-4">
-          <Link to="/app/student/kencana/banding" className="btn-secondary hidden md:flex">
+          <Link to="/student/kencana/banding" className="btn-secondary hidden md:flex">
             <span className="material-symbols-outlined">gavel</span> Ajukan Banding
           </Link>
           <div className="glass-card flex items-center gap-6 p-4 md:p-6 border border-slate-200 shadow-sm">

@@ -40,7 +40,7 @@ export default function KencanaBandingPage() {
       title="Banding Nilai" 
       highlightedTitle="Kencana"
       subtitle="Ajukan banding jika terdapat ketidaksesuaian pada rekapitulasi nilai akhir Kencana Anda." 
-      breadcrumbs={[{ label: 'Rekap Nilai', to: '/app/student/kencana/score' }, { label: 'Banding Nilai' }]}
+      breadcrumbs={[{ label: 'Rekap Nilai', to: '/student/kencana/score' }, { label: 'Banding Nilai' }]}
     >
       <section className="mb-8 grid gap-6 md:grid-cols-2">
         <div className="glass-card p-6 flex flex-col justify-between relative overflow-hidden">

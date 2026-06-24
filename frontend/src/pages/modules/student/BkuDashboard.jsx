@@ -63,7 +63,7 @@ export default function BkuDashboard() {
       value: `${Math.round(kencana?.persentase || 0)}%`,
       icon: 'school',
       colorTheme: 'primary',
-      route: '/app/student/kencana',
+      route: '/student/kencana',
       badgeText: kencana?.status === 'Selesai ✓' ? 'Selesai' : (kencana?.status || 'Aktif'),
       badgeIcon: <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>{kencana?.status === 'Selesai ✓' ? 'check_circle' : 'schedule'}</span>
     },
@@ -72,7 +72,7 @@ export default function BkuDashboard() {
       value: beasiswa?.total_tersedia || 0,
       icon: 'menu_book',
       colorTheme: 'success',
-      route: '/app/student/scholarship',
+      route: '/student/scholarship',
       badgeText: beasiswa?.total_tersedia > 0 ? 'Terbuka' : 'Tutup',
       badgeIcon: <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>info</span>
     },
@@ -81,7 +81,7 @@ export default function BkuDashboard() {
       value: voice?.jumlah_aktif || 0,
       icon: 'chat',
       colorTheme: 'secondary',
-      route: '/app/student/voice',
+      route: '/student/voice',
       badgeText: voice?.jumlah_belum_direspons > 0 ? `${voice.jumlah_belum_direspons} Menunggu` : 'Aman',
       badgeIcon: <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>{voice?.jumlah_belum_direspons > 0 ? 'warning' : 'check_circle'}</span>
     },
@@ -110,7 +110,7 @@ export default function BkuDashboard() {
     value: bmiDisplay ? bmiDisplay : (healthBadgeText === 'Sehat' ? 'Sehat' : 'Perhatian'),
     icon: 'monitor_heart',
     colorTheme: healthColorTheme,
-    route: '/app/student/health',
+    route: '/student/health',
     badgeText: bmiDisplay ? 'BMI' : 'Status',
     badgeIcon: <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>{healthIcon}</span>
   });
@@ -187,13 +187,13 @@ export default function BkuDashboard() {
           title="Akses Cepat"
           description="Pintasan Menu"
           actions={[
-            { label: 'KENCANA', icon: 'school', path: '/app/student/kencana', iconBg: 'bg-primary/10 text-primary border border-primary/20' },
-            { label: 'Achievement', icon: 'emoji_events', path: '/app/student/achievement', iconBg: 'bg-warning/10 text-warning border border-warning/20' },
-            { label: 'Scholarship', icon: 'workspace_premium', path: '/app/student/scholarship', iconBg: 'bg-success/10 text-success border border-success/20' },
-            { label: 'Organisasi', icon: 'groups', path: '/app/student/organisasi', iconBg: 'bg-primary/10 text-primary border border-primary/20' },
-            { label: 'Counseling', icon: 'support_agent', path: '/app/student/counseling', iconBg: 'bg-secondary/10 text-secondary border border-secondary/20' },
-            { label: 'Health', icon: 'monitor_heart', path: '/app/student/health', iconBg: 'bg-error/10 text-error border border-error/20' },
-            { label: 'Student Voice', icon: 'chat', path: '/app/student/voice', iconBg: 'bg-info/10 text-info border border-info/20' },
+            { label: 'KENCANA', icon: 'school', path: '/student/kencana', iconBg: 'bg-primary/10 text-primary border border-primary/20' },
+            { label: 'Achievement', icon: 'emoji_events', path: '/student/achievement', iconBg: 'bg-warning/10 text-warning border border-warning/20' },
+            { label: 'Scholarship', icon: 'workspace_premium', path: '/student/scholarship', iconBg: 'bg-success/10 text-success border border-success/20' },
+            { label: 'Organisasi', icon: 'groups', path: '/student/organisasi', iconBg: 'bg-primary/10 text-primary border border-primary/20' },
+            { label: 'Counseling', icon: 'support_agent', path: '/student/counseling', iconBg: 'bg-secondary/10 text-secondary border border-secondary/20' },
+            { label: 'Health', icon: 'monitor_heart', path: '/student/health', iconBg: 'bg-error/10 text-error border border-error/20' },
+            { label: 'Student Voice', icon: 'chat', path: '/student/voice', iconBg: 'bg-info/10 text-info border border-info/20' },
           ]}
         />
 

@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
 import { NavLink } from 'react-router-dom';
 import { PageContent } from '@/components/ui/page';
+import DataTable from '@/components/ui/DataTable';
 import { DashboardHero } from '@/components/ui/dashboard';
 import HealthCharacter from '@/components/health/HealthCharacter';
 import {
@@ -178,11 +179,215 @@ export default function HealthScreeningPage() {
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [bookingKeluhan, setBookingKeluhan] = useState('');
   const [submittingBooking, setSubmittingBooking] = useState(false);
+  const [selectedBookingDetail, setSelectedBookingDetail] = useState(null);
+  const [selectedRujukanDetail, setSelectedRujukanDetail] = useState(null);
   const [isRescheduleMode, setIsRescheduleMode] = useState(false);
   const [rescheduleBookingTarget, setRescheduleBookingTarget] = useState(null);
   const [claims, setClaims] = useState([]);
 
   // Fetch claims data
+  
+  // DATATABLE COLUMNS
+  const bookingColumns = [
+    {
+      key: 'tanggal',
+      label: 'Tgl & Jam',
+      sortable: true,
+      render: (val, row) => (
+        <div>
+          <p className="text-xs font-bold text-[var(--theme-text)]">
+            {row.jadwal?.tanggal ? new Date(row.jadwal.tanggal).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }) : '-'}
+          </p>
+          <p className="text-[10px] text-[var(--theme-text-muted)] font-medium mt-0.5">
+            {row.jadwal?.jam_mulai || ''}
+          </p>
+        </div>
+      )
+    },
+    {
+      key: 'nakes',
+      label: 'Tenaga Kesehatan',
+      sortable: true,
+      render: (val, row) => (
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-[var(--theme-text-muted)]" style={{ fontSize: '16px' }}>medical_services</span>
+          <div>
+            <p className="text-xs font-bold text-[var(--theme-text)]">{row.jadwal?.tenaga_kes?.nama || 'Tenaga Kesehatan'}</p>
+            <p className="text-[10px] text-[var(--theme-text-muted)] font-medium mt-0.5">{row.jadwal?.tipe_layanan || 'Konsultasi'} • {row.jadwal?.lokasi || 'Klinik Kampus'}</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (val, row) => {
+        const statusColors = {
+          'Menunggu Konfirmasi': 'bg-[var(--theme-warning-light)] text-[var(--theme-warning)] border-[var(--theme-warning)]/20',
+          'Dikonfirmasi': 'bg-[var(--theme-primary-light)] text-[var(--theme-primary)] border-[var(--theme-primary)]/20',
+          'Selesai': 'bg-[var(--theme-success-light)] text-[var(--theme-success)] border-[var(--theme-success)]/20',
+          'Perlu Kontrol': 'bg-[var(--theme-info-light)] text-[var(--theme-info)] border-[var(--theme-info)]/20',
+          'Ditolak': 'bg-[var(--theme-error-light)] text-[var(--theme-error)] border-[var(--theme-error)]/20',
+          'Dibatalkan': 'bg-[var(--theme-bg)] text-[var(--theme-text-muted)] border-[var(--theme-border)]',
+        };
+        const statusColor = statusColors[row.status] || 'bg-[var(--theme-bg)] text-[var(--theme-text-muted)] border-[var(--theme-border)]';
+        return (
+          <span className={`inline-flex items-center px-2 py-0.5 rounded border text-[9px] font-bold uppercase tracking-wider ${statusColor}`}>
+            {row.status}
+          </span>
+        );
+      }
+    }
+  ];
+
+  const medicalColumns = [
+    {
+      key: 'tanggal',
+      label: 'Tanggal',
+      sortable: true,
+      render: (val, row) => (
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-surface border border-border shadow-sm flex flex-col items-center justify-center group-hover:border-[var(--theme-primary)]/30 transition-colors shrink-0">
+            <span className="text-xs font-black text-[var(--theme-text)] leading-none">{new Date(row.tanggal_periksa).getDate()}</span>
+            <span className="text-[8px] font-bold text-[var(--theme-text-muted)] uppercase">{fmt(row.tanggal_periksa, { month: 'short' })}</span>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-[var(--theme-text)]">{new Date(row.tanggal_periksa).getFullYear()}</p>
+            <p className="text-[10px] text-[var(--theme-text-muted)]">Berkala</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'vitals',
+      label: 'TB/BB/TD',
+      sortable: false,
+      render: (val, row) => (
+        <div>
+          <p className="text-sm font-bold text-[var(--theme-text)]">
+            {row.tinggi_badan} <span className="text-[var(--theme-text-muted)] font-normal">/</span> {row.berat_badan} <span className="text-[var(--theme-text-muted)] font-normal">/</span> {row.sistolik}/{row.diastolik}
+          </p>
+          <div className="flex gap-1.5 mt-1">
+            {['cm', 'kg', 'mmHg'].map(u => (
+              <span key={u} className="text-[8px] font-bold text-[var(--theme-text-muted)] bg-[var(--theme-bg)] border border-border px-1.5 py-0.5 rounded">{u}</span>
+            ))}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'bmi',
+      label: 'BMI',
+      sortable: true,
+      render: (val, row) => {
+        const rb = getBMICategory(row.bmi);
+        return (
+          <div className="text-center">
+            <p className="text-sm font-black text-[var(--theme-text)]">{row.bmi}</p>
+            <p className={`text-[10px] font-bold uppercase ${rb.color}`}>{rb.label}</p>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (val, row) => (
+        <div className="text-center">
+          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${row.status_kesehatan === 'sehat' ? 'bg-[var(--theme-success-light)] text-[var(--theme-success)]' : 'bg-[var(--theme-primary-light)] text-[var(--theme-primary)]'}`}>
+            {row.status_kesehatan.replace('_', ' ')}
+          </span>
+        </div>
+      )
+    },
+    {
+      key: 'sumber',
+      label: 'Sumber',
+      sortable: true,
+      render: (val, row) => (
+        <div className="flex flex-col items-center gap-1.5">
+          {(() => {
+            if (row.sumber === 'kencana_screening') {
+              return (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-primary-light)] border border-[var(--theme-primary)]/20 text-[var(--theme-primary)] shadow-sm">
+                  <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>verified</span>
+                  <span className="text-[9px] font-extrabold tracking-wide uppercase">Kencana</span>
+                </div>
+              );
+            } else if (row.sumber === 'klinik_kampus') {
+              return (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-success-light)] border border-[var(--theme-success)]/20 text-[var(--theme-success)] shadow-sm">
+                  <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>shield</span>
+                  <span className="text-[9px] font-extrabold tracking-wide uppercase">Klinik Kampus</span>
+                </div>
+              );
+            } else {
+              return (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-bg)] border border-border text-[var(--theme-text-muted)] shadow-sm">
+                  <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>person</span>
+                  <span className="text-[9px] font-extrabold tracking-wide uppercase">Mandiri</span>
+                </div>
+              );
+            }
+          })()}
+          {row.diperiksa_oleh && (
+            <span className="text-[9px] font-medium text-[var(--theme-text-muted)] bg-[var(--theme-bg)] px-2 py-0.5 rounded-md border border-border/50 max-w-[120px] truncate shadow-sm" title={row.diperiksa_oleh}>
+              by {row.diperiksa_oleh}
+            </span>
+          )}
+        </div>
+      )
+    }
+  ];
+
+  const rujukanColumns = [
+    {
+      key: 'tanggal',
+      label: 'Tanggal',
+      sortable: true,
+      render: (val, row) => (
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-surface border border-border shadow-sm flex flex-col items-center justify-center shrink-0">
+            <span className="text-xs font-black text-[var(--theme-text)] leading-none">{new Date(row.created_at || row.CreatedAt).getDate()}</span>
+            <span className="text-[8px] font-bold text-[var(--theme-text-muted)] uppercase">{fmt(row.created_at || row.CreatedAt, { month: 'short' })}</span>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-[var(--theme-text)]">{new Date(row.created_at || row.CreatedAt).getFullYear()}</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'faskes_tujuan',
+      label: 'Faskes Tujuan',
+      sortable: true,
+      render: (val, row) => <p className="text-sm font-bold text-[var(--theme-text)]">{row.faskes_tujuan}</p>
+    },
+    {
+      key: 'alasan_rujukan',
+      label: 'Alasan',
+      sortable: false,
+      render: (val, row) => <p className="text-xs text-[var(--theme-text-muted)] max-w-[200px] truncate" title={row.alasan_rujukan}>{row.alasan_rujukan}</p>
+    },
+    {
+      key: 'rekomendasi_asuransi',
+      label: 'Rekomendasi Asuransi',
+      sortable: true,
+      render: (val, row) => {
+        if (row.rekomendasi_asuransi) {
+          return (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20">
+              {row.rekomendasi_asuransi.replace(/_/g, ' ')}
+            </span>
+          );
+        }
+        return <span className="text-xs text-[var(--theme-text-muted)]">-</span>;
+      }
+    }
+  ];
+
   const fetchClaims = async () => {
     try {
       const res = await insuranceService.getMyClaims();
@@ -358,7 +563,7 @@ export default function HealthScreeningPage() {
         title="Pusat Kesehatan BKU"
         subtitle="Pantau tren kesehatan & rekam medis digital kamu"
         breadcrumbs={[
-          { label: 'Health Screening', path: '/app/student/health' }
+          { label: 'Health Screening', path: '/student/health' }
         ]}
         actions={
           <div className="flex items-center gap-2">
@@ -564,62 +769,33 @@ export default function HealthScreeningPage() {
               Sesi Baru
             </button>
           </div>
-          <div className="divide-y divide-[var(--theme-border-muted)]">
-            {myBookings.slice(0, 3).map((booking) => {
-              const statusColors = {
-                'Menunggu Konfirmasi': 'bg-[var(--theme-warning-light)] text-[var(--theme-warning)] border-[var(--theme-warning)]/20',
-                'Dikonfirmasi': 'bg-[var(--theme-primary-light)] text-[var(--theme-primary)] border-[var(--theme-primary)]/20',
-                'Selesai': 'bg-[var(--theme-success-light)] text-[var(--theme-success)] border-[var(--theme-success)]/20',
-                'Ditolak': 'bg-[var(--theme-error-light)] text-[var(--theme-error)] border-[var(--theme-error)]/20',
-                'Dibatalkan': 'bg-[var(--theme-bg)] text-[var(--theme-text-muted)] border-[var(--theme-border)]',
-              };
-              const statusColor = statusColors[booking.status] || 'bg-[var(--theme-bg)] text-[var(--theme-text-muted)] border-[var(--theme-border)]';
-
-              return (
-                <div key={booking.id} className="px-5 py-4 flex items-center justify-between hover:bg-[var(--theme-bg)] transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--theme-bg)] flex items-center justify-center">
-                      <span className="material-symbols-outlined text-[var(--theme-text-muted)]" style={{ fontSize: '18px' }}>medical_services</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-[var(--theme-text)]">
-                        {booking.jadwal?.tenaga_kes?.nama || 'Tenaga Kesehatan'}
-                      </p>
-                      <p className="text-xs text-[var(--theme-text-muted)] mt-0.5">
-                        {booking.jadwal?.tanggal ? new Date(booking.jadwal.tanggal).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }) : '-'}
-                        {' • '}
-                        {booking.jadwal?.jam_mulai || ''}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${statusColor}`}>
-                        {booking.status}
-                      </span>
-                      {(booking.status === 'Menunggu Konfirmasi' || booking.status === 'Dikonfirmasi') && (
-                        <button
-                          onClick={() => handleCancelBooking(booking.id)}
-                          className="text-[10px] font-bold text-[var(--theme-error)] hover:underline"
-                        >
-                          Batal
-                        </button>
-                      )}
-                    </div>
-                    {booking.status === 'Perlu Kontrol' && (
-                      <button
-                        onClick={() => openRescheduleModal(booking)}
-                        className="text-[10px] font-bold text-[var(--theme-warning)] hover:underline flex items-center gap-1"
-                      >
-                        <span className="material-symbols-outlined text-[12px]">calendar_month</span>
-                        Jadwal Ulang Kontrol
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <DataTable 
+            columns={bookingColumns} 
+            data={myBookings || []} 
+            onRowClick={(row) => setSelectedBookingDetail(row)} 
+            actions={(row) => (
+              <React.Fragment>
+                {(row.status === 'Menunggu Konfirmasi' || row.status === 'Dikonfirmasi') && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleCancelBooking(row.id); }}
+                    className="text-[10px] font-bold text-[var(--theme-error)] bg-[var(--theme-error-light)] hover:bg-[var(--theme-error)] hover:text-white px-2 py-1 rounded transition-colors opacity-80 hover:opacity-100"
+                  >
+                    Batalkan
+                  </button>
+                )}
+                {row.status === 'Perlu Kontrol' && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openRescheduleModal(row); }}
+                    className="text-[10px] font-bold text-[var(--theme-primary)] bg-[var(--theme-primary-light)] hover:bg-[var(--theme-primary)] hover:text-white px-2 py-1 rounded transition-colors opacity-80 hover:opacity-100"
+                  >
+                    Jadwal Ulang
+                  </button>
+                )}
+              </React.Fragment>
+            )}
+            emptyMessage="Belum ada antrian aktif."
+            emptyIcon="event_note"
+          />
         </div>
       )}
 
@@ -760,124 +936,15 @@ export default function HealthScreeningPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-border">
-                {['Tanggal', 'TB / BB / Tensi', 'BMI', 'Status', 'Sumber', ''].map((h, i) => (
-                  <th key={i} className={`px-5 py-3 text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider ${i >= 2 ? 'text-center' : ''} ${i === 5 ? 'text-right' : ''}`}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {isRiwayatLoading ? (
-                [...Array(3)].map((_, i) => (
-                  <tr key={i}><td colSpan="6" className="px-5 py-4"><Skeleton className="h-12 w-full rounded-xl" /></td></tr>
-                ))
-              ) : riwayat?.length > 0 ? (
-                riwayat.map((rec) => {
-                  const rb = getBMICategory(rec.bmi);
-                  return (
-                    <tr key={rec.id} className="group hover:bg-[var(--theme-bg)] transition-colors">
-                      {/* Tanggal */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-surface border border-border shadow-sm flex flex-col items-center justify-center group-hover:border-[var(--theme-primary)]/30 transition-colors shrink-0">
-                            <span className="text-xs font-black text-[var(--theme-text)] leading-none">{new Date(rec.tanggal_periksa).getDate()}</span>
-                            <span className="text-[8px] font-bold text-[var(--theme-text-muted)] uppercase">{fmt(rec.tanggal_periksa, { month: 'short' })}</span>
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-[var(--theme-text)]">{new Date(rec.tanggal_periksa).getFullYear()}</p>
-                            <p className="text-[10px] text-[var(--theme-text-muted)]">Berkala</p>
-                          </div>
-                        </div>
-                      </td>
-                      {/* Vitals */}
-                      <td className="px-5 py-4">
-                        <p className="text-sm font-bold text-[var(--theme-text)]">
-                          {rec.tinggi_badan} <span className="text-[var(--theme-text-muted)] font-normal">/</span> {rec.berat_badan} <span className="text-[var(--theme-text-muted)] font-normal">/</span> {rec.sistolik}/{rec.diastolik}
-                        </p>
-                        <div className="flex gap-1.5 mt-1">
-                          {['cm', 'kg', 'mmHg'].map(u => (
-                            <span key={u} className="text-[8px] font-bold text-[var(--theme-text-muted)] bg-[var(--theme-bg)] border border-border px-1.5 py-0.5 rounded">{u}</span>
-                          ))}
-                        </div>
-                      </td>
-                      {/* BMI */}
-                      <td className="px-5 py-4 text-center">
-                        <p className="text-sm font-black text-[var(--theme-text)]">{rec.bmi}</p>
-                        <p className={`text-[10px] font-bold uppercase ${rb.color}`}>{rb.label}</p>
-                      </td>
-                      {/* Status */}
-                      <td className="px-5 py-4 text-center">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${rec.status_kesehatan === 'sehat' ? 'bg-[var(--theme-success-light)] text-[var(--theme-success)]' : 'bg-[var(--theme-primary-light)] text-[var(--theme-primary)]'
-                          }`}>
-                          {rec.status_kesehatan.replace('_', ' ')}
-                        </span>
-                      </td>
-                      {/* Sumber */}
-                      <td className="px-5 py-4 text-center">
-                        <div className="flex flex-col items-center gap-1.5">
-                          {(() => {
-                            if (rec.sumber === 'kencana_screening') {
-                              return (
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-primary-light)] border border-[var(--theme-primary)]/20 text-[var(--theme-primary)] shadow-sm">
-                                  <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>verified</span>
-                                  <span className="text-[9px] font-extrabold tracking-wide uppercase">Kencana Screening</span>
-                                </div>
-                              );
-                            } else if (rec.sumber === 'klinik_kampus') {
-                              return (
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-success-light)] border border-[var(--theme-success)]/20 text-[var(--theme-success)] shadow-sm">
-                                  <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>shield</span>
-                                  <span className="text-[9px] font-extrabold tracking-wide uppercase">Klinik Kampus</span>
-                                </div>
-                              );
-                            } else {
-                              return (
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-bg)] border border-border text-[var(--theme-text-muted)] shadow-sm">
-                                  <User size={11} className="text-[var(--theme-text-muted)]" />
-                                  <span className="text-[9px] font-extrabold tracking-wide uppercase">Mandiri</span>
-                                </div>
-                              );
-                            }
-                          })()}
-                          {rec.diperiksa_oleh && (
-                            <span className="text-[9px] font-medium text-[var(--theme-text-muted)] bg-[var(--theme-bg)] px-2 py-0.5 rounded-md border border-border/50 max-w-[120px] truncate shadow-sm" title={rec.diperiksa_oleh}>
-                              by {rec.diperiksa_oleh}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      {/* Action */}
-                      <td className="px-5 py-4 text-right">
-                        <button
-                          onClick={() => setSelectedDetailId(rec.id)}
-                          className="w-8 h-8 rounded-xl bg-surface border border-border flex items-center justify-center text-[var(--theme-primary)] hover:bg-[var(--theme-primary)] hover:text-white transition-all ml-auto shadow-sm"
-                        >
-                          <ChevronRight size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="6" className="py-16 text-center">
-                    <div className="inline-flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-[var(--theme-bg)] border-2 border-dashed border-border flex items-center justify-center">
-                        <Bookmark size={20} className="text-[var(--theme-text-muted)]" />
-                      </div>
-                      <p className="text-sm font-semibold text-[var(--theme-text-muted)]">Belum ada rekam medis.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable 
+            columns={medicalColumns} 
+            data={riwayat || []} 
+            loading={isRiwayatLoading}
+            searchable={false}
+            onRowClick={(row) => setSelectedDetailId(row.id)}
+            emptyMessage="Belum ada rekam medis."
+            emptyIcon="bookmark"
+          />
       </div>
 
       {/* ── Referral History (Rujukan Medis) ── */}
@@ -894,94 +961,44 @@ export default function HealthScreeningPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-border">
-                {['Tanggal', 'Faskes Tujuan', 'Alasan', 'Rekomendasi Asuransi', 'Aksi'].map((h, i) => (
-                  <th key={i} className="px-5 py-3 text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {isRujukanLoading ? (
-                [...Array(2)].map((_, i) => (
-                  <tr key={i}><td colSpan="5" className="px-5 py-4"><Skeleton className="h-12 w-full rounded-xl" /></td></tr>
-                ))
-              ) : rujukans?.length > 0 ? (
-                rujukans.map((ruj) => (
-                  <tr key={ruj.id} className="group hover:bg-[var(--theme-bg)] transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-surface border border-border shadow-sm flex flex-col items-center justify-center shrink-0">
-                          <span className="text-xs font-black text-[var(--theme-text)] leading-none">{new Date(ruj.created_at || ruj.CreatedAt).getDate()}</span>
-                          <span className="text-[8px] font-bold text-[var(--theme-text-muted)] uppercase">{fmt(ruj.created_at || ruj.CreatedAt, { month: 'short' })}</span>
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-[var(--theme-text)]">{new Date(ruj.created_at || ruj.CreatedAt).getFullYear()}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <p className="text-sm font-bold text-[var(--theme-text)]">{ruj.faskes_tujuan}</p>
-                    </td>
-                    <td className="px-5 py-4">
-                      <p className="text-xs text-[var(--theme-text-muted)] max-w-[200px] truncate" title={ruj.alasan_rujukan}>{ruj.alasan_rujukan}</p>
-                    </td>
-                    <td className="px-5 py-4">
-                      {ruj.rekomendasi_asuransi ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20">
-                          {ruj.rekomendasi_asuransi.replace(/_/g, ' ')}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-[var(--theme-text-muted)]">-</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      {(ruj.is_published || ruj.approval_status === "disetujui" || ruj.status === "Selesai") && (
-                        <button
-                          onClick={async () => {
-                            try {
-                              const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173/api';
-                              const blob = await fetchBlobWithAuth(`${API_URL}/mahasiswa/rujukan/${ruj.id || ruj.ID}/export-pdf`);
-                              const url = window.URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = `Surat_Rujukan_Medis.pdf`;
-                              document.body.appendChild(a);
-                              a.click();
-                              a.remove();
-                              window.URL.revokeObjectURL(url);
-                            } catch (err) {
-                              console.error(err);
-                            }
-                          }}
-                          className="w-8 h-8 rounded-xl bg-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/20 flex items-center justify-center text-[var(--theme-primary)] hover:bg-[var(--theme-primary)] hover:text-white transition-all ml-auto shadow-sm group/btn"
-                          title="Download Surat Rujukan"
-                        >
-                          <span className="material-symbols-outlined text-[16px] group-hover/btn:-translate-y-0.5 transition-transform">download</span>
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="py-16 text-center">
-                    <div className="inline-flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-[var(--theme-bg)] border-2 border-dashed border-border flex items-center justify-center">
-                        <Bookmark size={20} className="text-[var(--theme-text-muted)]" />
-                      </div>
-                      <p className="text-sm font-semibold text-[var(--theme-text-muted)]">Belum ada riwayat rujukan medis.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable 
+            columns={rujukanColumns} 
+            data={rujukans || []} 
+            loading={isRujukanLoading}
+            onRowClick={(row) => setSelectedRujukanDetail(row)}
+            searchable={false}
+            actions={(row) => (
+              <React.Fragment>
+                {(row.is_published || row.approval_status === "disetujui" || row.status === "Selesai") && (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        const API_URL = import.meta.env.VITE_API_URL || '/api';
+                        const blob = await fetchBlobWithAuth(`${API_URL}/mahasiswa/rujukan/${row.id || row.ID}/export-pdf`);
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `Surat_Rujukan_Medis.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }}
+                    className="w-8 h-8 rounded-xl bg-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/20 flex items-center justify-center text-[var(--theme-primary)] hover:bg-[var(--theme-primary)] hover:text-white transition-all ml-auto shadow-sm group/btn"
+                    title="Download Surat Rujukan"
+                  >
+                    <span className="material-symbols-outlined text-[16px] group-hover/btn:-translate-y-0.5 transition-transform">download</span>
+                  </button>
+                )}
+              </React.Fragment>
+            )}
+            emptyMessage="Belum ada riwayat rujukan medis."
+            emptyIcon="bookmark"
+          />
       </div>
 
       {/* ── CTA Panels ── */}
@@ -1001,7 +1018,7 @@ export default function HealthScreeningPage() {
               <span className="bg-[var(--theme-bg)] px-3 py-1.5 rounded-lg text-[11px] font-bold border border-[var(--theme-border-muted)] text-[var(--theme-text-muted)]">BPJS</span>
             </div>
             <NavLink
-              to="/app/student/insurance"
+              to="/student/insurance"
               className="flex items-center gap-2 px-4 py-2.5 bg-[var(--theme-primary)] text-[var(--theme-text-on-primary)] text-sm font-bold rounded-xl hover:opacity-90 transition-all w-fit shadow-md shadow-[var(--theme-primary)]/20"
             >
               Ajukan Klaim <span className="material-symbols-outlined" style={{ fontSize: '16px' }} >arrow_forward</span>
@@ -1060,6 +1077,20 @@ export default function HealthScreeningPage() {
           <SuccessFeedbackModal
             data={successModalData}
             onClose={() => setSuccessModalData(null)}
+          />
+        )}
+        {selectedBookingDetail && (
+          <BookingDetailModal
+            booking={selectedBookingDetail}
+            onClose={() => setSelectedBookingDetail(null)}
+            onCancel={handleCancelBooking}
+            onReschedule={openRescheduleModal}
+          />
+        )}
+        {selectedRujukanDetail && (
+          <RujukanDetailModal
+            rujukan={selectedRujukanDetail}
+            onClose={() => setSelectedRujukanDetail(null)}
           />
         )}
         {isBookingModalOpen && (
@@ -1269,16 +1300,7 @@ function InputModal({ onClose, onSubmit, isLoading }) {
               </div>
             </div>
 
-            {/* BP Live */}
-            <div className="bg-surface p-4 rounded-2xl border border-[var(--theme-primary-light)] shadow-sm">
-              <p className="text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest mb-2">Tekanan Darah</p>
-              <div className="text-2xl font-black tracking-tight mb-2 text-[var(--theme-text)]">
-                {formData.sistolik || '–'}<span className="text-[var(--theme-text-subtle)] font-medium">/</span>{formData.diastolik || '–'}
-              </div>
-              <span className={`text-[10px] font-bold uppercase ${bpStat.label === 'Belum Ada Data' ? 'text-[var(--theme-text-muted)]' : bpStat.color}`}>
-                {bpStat.label === 'Belum Ada Data' ? 'Menunggu input' : `Status: ${bpStat.label}`}
-              </span>
-            </div>
+            {/* BP Live (Hidden for Mandiri) */}
           </div>
         </div>
 
@@ -1297,173 +1319,114 @@ function InputModal({ onClose, onSubmit, isLoading }) {
           </div>
 
           {/* 2. Gaya Hidup */}
-          <div className="border border-[var(--theme-border)] rounded-3xl p-5 bg-surface space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-[var(--theme-border)]">
-              <span className="material-symbols-outlined text-[var(--theme-success)] font-bold" style={{ fontSize: '20px' }}>sports_gymnastics</span>
-              <span className="text-[11px] font-black text-[var(--theme-text)] uppercase tracking-widest">2. Gaya Hidup (Self-report)</span>
+          <div className="border border-[var(--theme-border)] rounded-3xl p-5 bg-[var(--theme-surface)] space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-[var(--theme-border-muted)]">
+              <span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '20px' }}>sports_gymnastics</span>
+              <span className="text-[11px] font-black text-[var(--theme-text)] uppercase tracking-widest">2. Gaya Hidup</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-[11px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest flex items-center gap-1.5 mb-2">
-                  <span className="material-symbols-outlined text-[var(--theme-success)] font-bold" style={{ fontSize: '16px' }}>bedtime</span> Jam Tidur / Hari
-                </label>
-                <select
-                  className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 transition-all text-[var(--theme-text)]"
-                  value={formData.jam_tidur}
-                  onChange={e => setFormData(p => ({ ...p, jam_tidur: e.target.value }))}
-                >
-                  {['4', '5', '6', '7', '8', '9'].map(v => <option key={v} value={v}>{v} Jam</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-[11px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest flex items-center gap-1.5 mb-2">
-                  <span className="material-symbols-outlined text-[var(--theme-success)] font-bold" style={{ fontSize: '16px' }}>fitness_center</span> Olahraga / Minggu
-                </label>
-                <select
-                  className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 transition-all text-[var(--theme-text)]"
-                  value={formData.olahraga}
-                  onChange={e => setFormData(p => ({ ...p, olahraga: e.target.value }))}
-                >
-                  {['0', '1', '2', '3', '4'].map(v => <option key={v} value={v}>{v} Kali</option>)}
-                </select>
-              </div>
+              <InputField label="Jam Tidur" unit="Jam/Hari" value={formData.jam_tidur} onChange={v => setFormData(p => ({ ...p, jam_tidur: v }))} icon={<span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>bedtime</span>} placeholder="8" />
+              <InputField label="Olahraga" unit="x/Minggu" value={formData.olahraga} onChange={v => setFormData(p => ({ ...p, olahraga: v }))} icon={<span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>fitness_center</span>} placeholder="2" />
             </div>
             <div className="grid grid-cols-2 gap-4">
+              <InputField label="Konsumsi Air" unit="Liter" value={formData.konsumsi_air} onChange={v => setFormData(p => ({ ...p, konsumsi_air: v }))} icon={<span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>water_drop</span>} placeholder="2.0" />
               <div>
-                <label className="text-[11px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest flex items-center gap-1.5 mb-2">
-                  <span className="material-symbols-outlined text-[var(--theme-success)] font-bold" style={{ fontSize: '16px' }}>local_drink</span> Air Minum (L)
-                </label>
-                <select
-                  className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 transition-all text-[var(--theme-text)]"
-                  value={formData.konsumsi_air}
-                  onChange={e => setFormData(p => ({ ...p, konsumsi_air: e.target.value }))}
-                >
-                  {['1.0', '1.5', '2.0', '2.5', '3.0'].map(v => <option key={v} value={v}>{v} Liter</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-[11px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest flex items-center gap-1.5 mb-2">
-                  <span className="material-symbols-outlined text-[var(--theme-success)] font-bold" style={{ fontSize: '16px' }}>smoke_free</span> Apakah Merokok?
+                <label className="text-[10px] font-bold text-[var(--theme-text)] uppercase tracking-wider flex items-center gap-1.5 mb-1.5 justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>smoking_rooms</span> Merokok
+                  </span>
                 </label>
                 <select
                   className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 transition-all text-[var(--theme-text)]"
                   value={formData.merokok}
                   onChange={e => setFormData(p => ({ ...p, merokok: e.target.value }))}
                 >
-                  {['Tidak', 'Ya'].map(v => <option key={v} value={v}>{v}</option>)}
+                  {['Tidak', 'Jarang', 'Sering'].map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
             </div>
           </div>
 
-          {/* 3. Mental */}
-          <div className="border border-[var(--theme-border)] rounded-3xl p-5 bg-surface space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-[var(--theme-border)]">
+          {/* 3. Kondisi Mental */}
+          <div className="border border-[var(--theme-border)] rounded-3xl p-5 bg-[var(--theme-surface)] space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-[var(--theme-border-muted)]">
               <span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '20px' }}>psychology</span>
-              <span className="text-[11px] font-black text-[var(--theme-text)] uppercase tracking-widest">3. Kategori Mental (Self-report)</span>
+              <span className="text-[11px] font-black text-[var(--theme-text)] uppercase tracking-widest">3. Kondisi Mental & Akademik</span>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-[11px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest flex items-center gap-1.5">
-                  Tingkat Stres (1-10)
-                </label>
-                <span className="px-3 py-1 text-[13px] font-extrabold bg-[var(--theme-primary-light)] text-[var(--theme-primary)] rounded-xl">{formData.tingkat_stres}</span>
-              </div>
-              <input
-                type="range"
-                min="1"
-                max="10"
-                className="w-full accent-[var(--theme-primary)] bg-[var(--theme-bg)] h-2 rounded-xl appearance-none cursor-pointer"
-                value={formData.tingkat_stres}
-                onChange={e => setFormData(p => ({ ...p, tingkat_stres: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4 mt-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-[11px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest flex items-center gap-1.5 mb-2">
-                  <span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>mood</span> Mood Minggu Ini
+                <label className="text-[10px] font-bold text-[var(--theme-text)] uppercase tracking-wider flex items-center gap-1.5 mb-1.5 justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>stress_management</span> Tingkat Stres ({formData.tingkat_stres}/10)
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  value={formData.tingkat_stres}
+                  onChange={e => setFormData(p => ({ ...p, tingkat_stres: e.target.value }))}
+                  className="w-full accent-[var(--theme-primary)] mt-3"
+                />
+                <div className="flex justify-between text-[9px] font-bold text-[var(--theme-text-muted)] mt-1 px-1">
+                  <span>Rileks</span>
+                  <span>Sangat Stres</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-[var(--theme-text)] uppercase tracking-wider flex items-center gap-1.5 mb-1.5 justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>mood</span> Mood Saat Ini
+                  </span>
                 </label>
                 <select
                   className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 transition-all text-[var(--theme-text)]"
                   value={formData.mood}
                   onChange={e => setFormData(p => ({ ...p, mood: e.target.value }))}
                 >
-                  {['Sangat Baik', 'Baik', 'Biasa Saja', 'Buruk', 'Sangat Buruk'].map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-[11px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest flex items-center gap-1.5 mb-2">
-                  <span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>auto_stories</span> Motivasi Belajar
-                </label>
-                <select
-                  className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 transition-all text-[var(--theme-text)]"
-                  value={formData.motivasi_belajar}
-                  onChange={e => setFormData(p => ({ ...p, motivasi_belajar: e.target.value }))}
-                >
-                  {['Sangat Tinggi', 'Tinggi', 'Biasa Saja', 'Rendah', 'Sangat Rendah'].map(v => <option key={v} value={v}>{v}</option>)}
+                  {['Sangat Baik', 'Biasa Saja', 'Kurang Baik', 'Buruk'].map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
             </div>
+            <div>
+              <label className="text-[10px] font-bold text-[var(--theme-text)] uppercase tracking-wider flex items-center gap-1.5 mb-1.5 justify-between">
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>school</span> Motivasi Belajar
+                </span>
+              </label>
+              <select
+                className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 transition-all text-[var(--theme-text)]"
+                value={formData.motivasi_belajar}
+                onChange={e => setFormData(p => ({ ...p, motivasi_belajar: e.target.value }))}
+              >
+                {['Tinggi', 'Biasa Saja', 'Rendah', 'Sangat Rendah (Burnout)'].map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
           </div>
 
-          {/* 4. Keluhan */}
-          <div className="border border-[var(--theme-border)] rounded-3xl p-5 bg-surface space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-[var(--theme-border)]">
-              <span className="material-symbols-outlined text-[var(--theme-error)] font-bold" style={{ fontSize: '20px' }}>healing</span>
-              <span className="text-[11px] font-black text-[var(--theme-text)] uppercase tracking-widest">4. Kategori Keluhan (Bila Ada)</span>
+          {/* 4. Gejala Fisik Umum */}
+          <div className="border border-[var(--theme-border)] rounded-3xl p-5 bg-[var(--theme-surface)] space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-[var(--theme-border-muted)]">
+              <span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '20px' }}>healing</span>
+              <span className="text-[11px] font-black text-[var(--theme-text)] uppercase tracking-widest">4. Gejala Fisik Umum (Check jika ada)</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {[
                 { key: 'sakit_kepala', label: 'Sakit Kepala' },
-                { key: 'pusing', label: 'Pusing' },
+                { key: 'pusing', label: 'Pusing / Berkunang' },
                 { key: 'lelah', label: 'Lelah / Lemas' },
-                { key: 'nyeri_sendi', label: 'Nyeri Sendi' },
-              ].map(item => (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => setFormData(p => ({ ...p, [item.key]: !p[item.key] }))}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-2xl border text-left text-[13px] font-bold transition-all cursor-pointer ${formData[item.key]
-                    ? 'bg-[var(--theme-error-light)] border-[var(--theme-error)]/20 text-[var(--theme-error)] shadow-sm ring-2 ring-[var(--theme-error)]/10'
-                    : 'bg-[var(--theme-bg)] border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)]'
-                    }`}
-                >
-                  <span className="material-symbols-outlined font-bold" style={{ fontSize: '18px' }}>
-                    {formData[item.key] ? 'check_circle' : 'add_circle'}
-                  </span>
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 5. Kategori Opsional */}
-          <div className="border border-[var(--theme-border)] rounded-3xl p-5 bg-surface space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-[var(--theme-border)]">
-              <span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '20px' }}>query_stats</span>
-              <span className="text-[11px] font-black text-[var(--theme-text)] uppercase tracking-widest">5. Kategori Opsional (Alat/Klinik)</span>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <InputField label="Tensi Sistolik" unit="mmHg" value={formData.sistolik} onChange={v => setFormData(p => ({ ...p, sistolik: v }))} icon={<span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>arrow_upward</span>} placeholder="120" isOptional={true} />
-              <InputField label="Tensi Diastolik" unit="mmHg" value={formData.diastolik} onChange={v => setFormData(p => ({ ...p, diastolik: v }))} icon={<span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>arrow_downward</span>} placeholder="80" isOptional={true} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <InputField label="Gula Darah" unit="mg/dL" value={formData.gula_darah} onChange={v => setFormData(p => ({ ...p, gula_darah: v }))} icon={<span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>water_drop</span>} placeholder="90" isOptional={true} />
-              <div>
-                <label className="text-[11px] font-bold text-[var(--theme-text-muted)] uppercase tracking-widest flex items-center gap-1.5 mb-2 justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[var(--theme-primary)] font-bold" style={{ fontSize: '16px' }}>bloodtype</span> Golongan Darah
-                  </span>
-                  <span className="text-[9px] font-extrabold px-2 py-1 rounded-md bg-[var(--theme-bg)] text-[var(--theme-text-muted)] border border-[var(--theme-border)] normal-case tracking-normal">Opsional</span>
+                { key: 'nyeri_sendi', label: 'Nyeri Sendi / Otot' },
+              ].map(({ key, label }) => (
+                <label key={key} className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${formData[key] ? 'border-[var(--theme-primary)] bg-[var(--theme-primary)]/5' : 'border-[var(--theme-border)] bg-[var(--theme-bg)] hover:border-[var(--theme-primary)]/50'}`}>
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded text-[var(--theme-primary)] border-[var(--theme-border)] focus:ring-[var(--theme-primary)] bg-[var(--theme-bg)] accent-[var(--theme-primary)] cursor-pointer"
+                    checked={formData[key]}
+                    onChange={(e) => setFormData(p => ({ ...p, [key]: e.target.checked }))}
+                  />
+                  <span className={`text-[12px] font-bold ${formData[key] ? 'text-[var(--theme-primary)]' : 'text-[var(--theme-text)]'}`}>{label}</span>
                 </label>
-                <select
-                  className="w-full px-4 py-3 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-2xl text-[13px] font-bold focus:outline-none focus:border-[var(--theme-primary)] focus:ring-4 focus:ring-[var(--theme-primary)]/10 transition-all text-[var(--theme-text)]"
-                  value={formData.golongan_darah}
-                  onChange={e => setFormData(p => ({ ...p, golongan_darah: e.target.value }))}
-                >
-                  {['A', 'B', 'AB', 'O', '-'].map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -1556,7 +1519,7 @@ function DetailModal({ record, isLoading, onClose, hasActiveInsuranceClaim }) {
   const handleDownloadPDF = async () => {
     const toastId = toast.loading('Menyiapkan PDF Rekam Medis...');
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5173/api';
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
       const blob = await fetchBlobWithAuth(`${API_URL}/student-health/session-notes/${record.id}/export-pdf`);
 
       const url = window.URL.createObjectURL(blob);
@@ -1593,7 +1556,7 @@ function DetailModal({ record, isLoading, onClose, hasActiveInsuranceClaim }) {
             </button>
           ) : (
             <NavLink
-              to="/app/student/insurance"
+              to="/student/insurance"
               state={{
                 tanggal: record.tanggal_periksa ? record.tanggal_periksa.split('T')[0] : '',
                 deskripsi: `Klaim biaya pemeriksaan kesehatan (${record.jenis_pemeriksaan}) pada tanggal ${fmt(record.tanggal_periksa, { day: 'numeric', month: 'long', year: 'numeric' })}. Catatan: ${parsedNotes ? "Hasil Skrining Mandiri" : (record.catatan_medis || record.catatan || 'Pemeriksaan rutin.')}`
@@ -1944,7 +1907,7 @@ function SuccessFeedbackModal({ data, onClose }) {
                   Tingkat stresmu atau BMI terdeteksi memerlukan panduan ahli. Kamu bisa berkonsultasi gratis dengan psikolog profesional di unit konseling universitas secara rahasia.
                 </p>
                 <a
-                  href="/app/student/counseling"
+                  href="/student/counseling"
                   className="inline-flex items-center gap-1 text-[11px] font-black text-[var(--theme-primary)] hover:underline"
                 >
                   Jadwalkan Konseling Sekarang <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>arrow_forward</span>
@@ -1987,16 +1950,28 @@ function BookingModal({
   isRescheduleMode,
   rescheduleBookingTarget,
 }) {
+  const [filterHari, setFilterHari] = useState('Semua');
+  const [filterNakes, setFilterNakes] = useState('Semua');
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
     return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   };
 
+  const getHariName = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('id-ID', { weekday: 'long' });
+  };
+
   const formatTime = (timeStr) => {
     if (!timeStr) return '-';
     return timeStr.substring(0, 5);
   };
+
+  // Extract unique filters from schedules
+  const uniqueHari = [...new Set(schedules.map(s => getHariName(s.tanggal)))].filter(Boolean);
+  const uniqueNakes = [...new Set(schedules.map(s => s.tenaga_kes?.nama))].filter(Boolean);
 
   return (
     <DialogModal
@@ -2043,19 +2018,33 @@ function BookingModal({
 
         {/* Step 1: Jadwal */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-black text-[var(--theme-text)] flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+            <h4 className="text-sm font-black text-[var(--theme-text)] flex items-center gap-2 shrink-0">
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] text-xs">1</span>
-              {isRescheduleMode ? 'Pilih Jadwal Kontrol Lanjutan' : 'Pilih Jadwal Tersedia'}
+              {isRescheduleMode ? 'Pilih Jadwal Kontrol' : 'Pilih Jadwal Tersedia'}
             </h4>
-            <span className="px-2.5 py-1 bg-[var(--theme-bg)] text-[var(--theme-text-muted)] rounded-lg text-[10px] font-bold">
-              {(() => {
-                const filtered = isRescheduleMode && rescheduleBookingTarget
-                  ? schedules.filter(s => s.tenaga_kes_id === rescheduleBookingTarget.jadwal?.tenaga_kes_id)
-                  : schedules;
-                return filtered.length;
-              })()} Tersedia
-            </span>
+            
+            {/* Filters */}
+            {!isRescheduleMode && (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <select
+                  value={filterHari}
+                  onChange={e => setFilterHari(e.target.value)}
+                  className="px-3 py-1.5 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-lg text-[11px] font-bold focus:outline-none focus:border-[var(--theme-primary)] w-full sm:w-auto"
+                >
+                  <option value="Semua">Semua Hari</option>
+                  {uniqueHari.map(h => <option key={h} value={h}>{h}</option>)}
+                </select>
+                <select
+                  value={filterNakes}
+                  onChange={e => setFilterNakes(e.target.value)}
+                  className="px-3 py-1.5 bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-lg text-[11px] font-bold focus:outline-none focus:border-[var(--theme-primary)] w-full sm:w-auto"
+                >
+                  <option value="Semua">Semua Nakes</option>
+                  {uniqueNakes.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+            )}
           </div>
 
           {loading ? (
@@ -2067,9 +2056,18 @@ function BookingModal({
           ) : (
             <div className="grid gap-3 max-h-[300px] overflow-y-auto pr-1 snap-y custom-scrollbar">
               {(() => {
-                const displaySchedules = isRescheduleMode && rescheduleBookingTarget
+                let displaySchedules = isRescheduleMode && rescheduleBookingTarget
                   ? schedules.filter(s => s.tenaga_kes_id === rescheduleBookingTarget.jadwal?.tenaga_kes_id)
                   : schedules;
+
+                if (!isRescheduleMode) {
+                  if (filterHari !== 'Semua') {
+                    displaySchedules = displaySchedules.filter(s => getHariName(s.tanggal) === filterHari);
+                  }
+                  if (filterNakes !== 'Semua') {
+                    displaySchedules = displaySchedules.filter(s => s.tenaga_kes?.nama === filterNakes);
+                  }
+                }
 
                 if (displaySchedules.length === 0) {
                   return (
@@ -2111,13 +2109,23 @@ function BookingModal({
                             <h5 className={`text-[15px] font-bold leading-tight ${isSelected ? 'text-[var(--theme-primary)]' : 'text-[var(--theme-text)]'}`}>
                               {schedule.tenaga_kes?.nama || 'Tenaga Kesehatan'}
                             </h5>
-                            <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              <span className="text-[11px] font-bold text-[var(--theme-text-muted)] bg-[var(--theme-bg)] px-2 py-0.5 rounded-md uppercase tracking-wider">
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                              <span className="text-[10px] font-bold text-[var(--theme-text-muted)] bg-[var(--theme-bg)] px-2 py-1 rounded-md uppercase tracking-wider">
                                 {schedule.tipe_layanan}
                               </span>
-                              <span className="text-xs text-[var(--theme-text-muted)] flex items-center gap-1 font-medium">
+                              <span className="text-[11px] text-[var(--theme-text-muted)] flex items-center gap-1 font-semibold">
+                                <span className="material-symbols-outlined text-[14px]">event</span>
+                                {getHariName(schedule.tanggal)}, {formatDate(schedule.tanggal).replace(getHariName(schedule.tanggal)+',', '')}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="text-[11px] text-[var(--theme-text-muted)] flex items-center gap-1 font-semibold">
                                 <span className="material-symbols-outlined text-[14px]">schedule</span>
-                                {formatTime(schedule.jam_mulai)}-{formatTime(schedule.jam_selesai)}
+                                {formatTime(schedule.jam_mulai)} - {formatTime(schedule.jam_selesai)}
+                              </span>
+                              <span className="text-[11px] text-[var(--theme-text-muted)] flex items-center gap-1 font-semibold">
+                                <span className="material-symbols-outlined text-[14px]">location_on</span>
+                                {schedule.lokasi || 'Klinik Kampus'}
                               </span>
                             </div>
                           </div>
@@ -2178,3 +2186,149 @@ function BookingModal({
   );
 }
 
+function BookingDetailModal({ booking, onClose, onCancel, onReschedule }) {
+  if (!booking) return null;
+
+  return (
+    <DialogModal
+      open={true}
+      onOpenChange={onClose}
+      title="Detail Booking Kesehatan"
+      subtitle={`Antrian dengan ${booking.jadwal?.tenaga_kes?.nama || 'Tenaga Kesehatan'}`}
+      icon="assignment"
+      maxWidth="max-w-md"
+      footer={
+        <div className="flex gap-2 justify-end w-full">
+          {(booking.status === 'Menunggu Konfirmasi' || booking.status === 'Dikonfirmasi') && (
+            <button
+              onClick={() => { onClose(); onCancel(booking.id); }}
+              className="py-2.5 px-4 bg-[var(--theme-error-light)] text-[var(--theme-error)] text-xs font-black rounded-xl hover:bg-[var(--theme-error)] hover:text-white transition-all uppercase tracking-wider cursor-pointer"
+            >
+              Batalkan Sesi
+            </button>
+          )}
+          {booking.status === 'Perlu Kontrol' && (
+            <button
+              onClick={() => { onClose(); onReschedule(booking); }}
+              className="py-2.5 px-4 bg-[var(--theme-primary-light)] text-[var(--theme-primary)] text-xs font-black rounded-xl hover:bg-[var(--theme-primary)] hover:text-white transition-all uppercase tracking-wider cursor-pointer"
+            >
+              Jadwal Ulang
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="py-2.5 px-5 bg-[var(--theme-primary)] text-white text-xs font-black rounded-xl hover:opacity-90 transition-all uppercase tracking-wider cursor-pointer"
+          >
+            Tutup
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        <div className="bg-[var(--theme-bg)] rounded-xl p-4 border border-[var(--theme-border)]">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="block text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mb-1">Tanggal & Waktu</span>
+              <p className="font-bold text-[var(--theme-text)]">
+                {booking.jadwal?.tanggal ? new Date(booking.jadwal.tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+              </p>
+              <p className="text-xs text-[var(--theme-text-muted)] mt-0.5">{booking.jadwal?.jam_mulai} - {booking.jadwal?.jam_selesai}</p>
+            </div>
+            <div>
+              <span className="block text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mb-1">Lokasi & Tipe</span>
+              <p className="font-bold text-[var(--theme-text)]">{booking.jadwal?.lokasi || 'Klinik Kampus'}</p>
+              <p className="text-xs text-[var(--theme-text-muted)] mt-0.5">{booking.jadwal?.tipe_layanan || 'Pemeriksaan Umum'}</p>
+            </div>
+            <div className="col-span-2">
+              <span className="block text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mb-1">Status</span>
+              <span className="inline-block bg-[var(--theme-bg)] text-[var(--theme-text)] px-2 py-1 rounded border border-[var(--theme-border)] font-bold text-xs uppercase">
+                {booking.status}
+              </span>
+            </div>
+            <div className="col-span-2 pt-2 border-t border-[var(--theme-border)]">
+              <span className="block text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mb-1">Keluhan / Catatan Awal</span>
+              <p className="text-sm font-medium text-[var(--theme-text)] whitespace-pre-wrap leading-relaxed">
+                {booking.keluhan || '-'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </DialogModal>
+  );
+}
+
+function RujukanDetailModal({ rujukan, onClose }) {
+  if (!rujukan) return null;
+
+  const dateRaw = rujukan.created_at || rujukan.CreatedAt;
+  const dateStr = dateRaw ? new Date(dateRaw).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '-';
+
+  return (
+    <DialogModal
+      open={true}
+      onOpenChange={onClose}
+      title="Detail Rujukan Medis"
+      subtitle={`Rujukan ke ${rujukan.faskes_tujuan || 'Fasilitas Kesehatan'}`}
+      icon="home_health"
+      maxWidth="max-w-md"
+      footer={
+        <div className="flex gap-2 justify-end w-full">
+          <button
+            onClick={onClose}
+            className="py-2.5 px-5 bg-[var(--theme-primary)] text-white text-xs font-black rounded-xl hover:opacity-90 transition-all uppercase tracking-wider cursor-pointer"
+          >
+            Tutup
+          </button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        <div className="bg-[var(--theme-bg)] rounded-xl p-4 border border-[var(--theme-border)]">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="block text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mb-1">Tanggal Rujukan</span>
+              <p className="font-bold text-[var(--theme-text)]">{dateStr}</p>
+            </div>
+            <div>
+              <span className="block text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mb-1">Faskes Tujuan</span>
+              <p className="font-bold text-[var(--theme-text)]">{rujukan.faskes_tujuan || '-'}</p>
+            </div>
+            <div className="col-span-2">
+              <span className="block text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mb-1">Rekomendasi Asuransi</span>
+              {rujukan.rekomendasi_asuransi ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20">
+                  {rujukan.rekomendasi_asuransi.replace(/_/g, ' ')}
+                </span>
+              ) : (
+                <span className="text-xs text-[var(--theme-text-muted)]">-</span>
+              )}
+            </div>
+            {(rujukan.is_published || rujukan.approval_status || rujukan.status) && (
+              <div className="col-span-2">
+                <span className="block text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mb-1">Status Persetujuan</span>
+                <span className="inline-block bg-[var(--theme-bg)] text-[var(--theme-text)] px-2 py-1 rounded border border-[var(--theme-border)] font-bold text-xs uppercase">
+                  {rujukan.status || rujukan.approval_status || (rujukan.is_published ? 'Tersedia' : 'Menunggu')}
+                </span>
+              </div>
+            )}
+            <div className="col-span-2 pt-2 border-t border-[var(--theme-border)]">
+              <span className="block text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mb-1">Alasan Rujukan</span>
+              <p className="text-sm font-medium text-[var(--theme-text)] whitespace-pre-wrap leading-relaxed">
+                {rujukan.alasan_rujukan || '-'}
+              </p>
+            </div>
+            {rujukan.catatan_tambahan && (
+              <div className="col-span-2 pt-2 border-t border-[var(--theme-border)]">
+                <span className="block text-[10px] font-bold text-[var(--theme-text-muted)] uppercase tracking-wider mb-1">Catatan Tambahan</span>
+                <p className="text-sm font-medium text-[var(--theme-text)] whitespace-pre-wrap leading-relaxed">
+                  {rujukan.catatan_tambahan}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </DialogModal>
+  );
+}

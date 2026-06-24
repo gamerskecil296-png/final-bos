@@ -190,58 +190,7 @@ func MahasiswaCheck(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-func KencanaAdminCheck(c *fiber.Ctx) error {
-	role, ok := c.Locals("role").(string)
-	if !ok {
-		return c.Status(403).JSON(fiber.Map{"status": "error", "message": "Akses ditolak."})
-	}
-	r := strings.ToLower(role)
-	if HasAnyRole(r, "super_admin", "kencana_admin") {
-		return c.Next()
-	}
 
-	permissions := loadRolePermissions(c, role)
-	for _, p := range permissions {
-		if p == "*" || strings.HasPrefix(p, "kencana.") {
-			return c.Next()
-		}
-	}
-
-	return c.Status(403).JSON(fiber.Map{
-		"status":  "error",
-		"message": "Akses ditolak. Fitur ini hanya untuk Admin Kencana.",
-	})
-}
-
-func KencanaFakultasCheck(c *fiber.Ctx) error {
-	role, ok := c.Locals("role").(string)
-	if !ok {
-		return c.Status(403).JSON(fiber.Map{"status": "error", "message": "Akses ditolak."})
-	}
-	r := strings.ToLower(role)
-	if !HasAnyRole(r, "super_admin", "kencana_fakultas") {
-		return c.Status(403).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Akses ditolak. Fitur ini hanya untuk Admin Kencana Fakultas.",
-		})
-	}
-	return c.Next()
-}
-
-func KencanaMentorCheck(c *fiber.Ctx) error {
-	role, ok := c.Locals("role").(string)
-	if !ok {
-		return c.Status(403).JSON(fiber.Map{"status": "error", "message": "Akses ditolak."})
-	}
-	r := strings.ToLower(role)
-	if !HasAnyRole(r, "super_admin", "kencana_admin", "kencana_mentor") {
-		return c.Status(403).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Akses ditolak. Fitur ini hanya untuk Dewan Pembimbing Kencana.",
-		})
-	}
-	return c.Next()
-}
 
 func OrmawaCheck(c *fiber.Ctx) error {
 	role, ok := c.Locals("role").(string)

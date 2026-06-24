@@ -3,10 +3,14 @@ package kencana
 import (
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/jpeg"
+	_ "image/png"
 	"os"
 	"path/filepath"
 	"regexp"
 	"siakad-backend/config"
+	"siakad-backend/middleware"
 	"siakad-backend/models"
 	"siakad-backend/pkg/notifikasi"
 	"siakad-backend/services"
@@ -14,23 +18,15 @@ import (
 	"strings"
 	"time"
 
-	"image"
-	_ "image/jpeg"
-	_ "image/png"
-
-	"github.com/chai2010/webp"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jung-kurt/gofpdf"
 	"gorm.io/gorm"
 )
 
-func kencanaAdminScope(c *fiber.Ctx) (role string, fakultasID uint) {
-	role, _ = c.Locals("role").(string)
-	role = strings.ToLower(role)
-	if strings.Contains(role, "kencana_fakultas") {
-		role = "kencana_fakultas"
-	}
+// kencanaAdminScope determines the effective role and fakultas_id for the current request.
+// It maps legacy role strings and new permission-based roles into a unified scope.
+func kencanaAdminScope(c *fiber.Ctx) (normalizedRole string, fakultasID uint) {
 	if v, ok := c.Locals("fakultas_id").(float64); ok {
 		fakultasID = uint(v)
 	} else if v, ok := c.Locals("fakultas_id").(uint); ok {
@@ -38,7 +34,39 @@ func kencanaAdminScope(c *fiber.Ctx) (role string, fakultasID uint) {
 	} else if v, ok := c.Locals("fakultas_id").(int); ok {
 		fakultasID = uint(v)
 	}
-	return role, fakultasID
+
+	role, _ := c.Locals("role").(string)
+	if middleware.IsSuperAdmin(role) {
+		return "super_admin", fakultasID
+	}
+
+	var permissions []string
+	if perms, ok := c.Locals("permissions").([]string); ok {
+		permissions = perms
+	}
+
+	roleLower := strings.ToLower(role)
+	hasUniv := strings.Contains(roleLower, "kencana_admin")
+	hasFac := strings.Contains(roleLower, "kencana_fakultas")
+
+	for _, p := range permissions {
+		if p == "*" || p == "kencana.university.view" || p == "kencana.timeline.view" || p == "kencana.dashboard.view" {
+			hasUniv = true
+		}
+		if p == "kencana.faculty_stages.view" {
+			hasFac = true
+		}
+	}
+
+	// Determine what the user acts as.
+	// If they have university access and (no faculty access or no fakultas_id), they act as kencana_admin
+	if hasUniv && (!hasFac || fakultasID == 0) {
+		return "kencana_admin", fakultasID
+	}
+	if hasFac {
+		return "kencana_fakultas", fakultasID
+	}
+	return "kencana_admin", fakultasID // default
 }
 
 func applyKencanaMentorScope(c *fiber.Ctx, q *gorm.DB) *gorm.DB {
@@ -214,6 +242,43 @@ func CreatePeriod(c *fiber.Ctx) error {
 	EnsureFacultyPhases(period.ID)
 
 	return c.JSON(fiber.Map{"success": true, "message": "Periode berhasil dibuat", "data": period})
+}
+
+func UpdatePeriod(c *fiber.Ctx) error {
+	var period models.KencanaPeriod
+	if err := config.DB.First(&period, c.Params("id")).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{"success": false, "message": "Periode tidak ditemukan"})
+	}
+
+	type updateReq struct {
+		Name          string  `json:"name"`
+		Theme         string  `json:"theme"`
+		Description   string  `json:"description"`
+		PassingGrade  float64 `json:"passing_grade"`
+		RemedialGrade float64 `json:"remedial_grade"`
+	}
+	var req updateReq
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Payload periode tidak valid"})
+	}
+
+	if req.Name != "" {
+		period.Name = req.Name
+	}
+	period.Theme = req.Theme
+	period.Description = req.Description
+	if req.PassingGrade > 0 {
+		period.PassingGrade = req.PassingGrade
+	}
+	if req.RemedialGrade > 0 {
+		period.RemedialGrade = req.RemedialGrade
+	}
+
+	if err := config.DB.Save(&period).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal menyimpan periode"})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "message": "Periode berhasil diupdate", "data": period})
 }
 
 func SyncFromSevimaPeriod(c *fiber.Ctx) error {
@@ -630,7 +695,7 @@ func CompleteFacultyPhase(c *fiber.Ctx) error {
 
 	if assignedStudents < totalStudents {
 		return c.Status(400).JSON(fiber.Map{
-			"success": false, 
+			"success": false,
 			"message": fmt.Sprintf("Tidak dapat menyelesaikan fase. Ada %d mahasiswa yang belum mendapatkan kelompok/mentor.", totalStudents-assignedStudents),
 		})
 	}
@@ -1452,7 +1517,7 @@ func listParticipantsFromPMB(c *fiber.Ctx, pmbPeriodeId string, periodID uint, p
 
 		prodiName := r.PilihanProdi
 		jalurName := r.Jalur
-		
+
 		fakultasName := prodiFakultasMap[prodiName]
 		if fakultasName == "" {
 			fakultasName = "Lainnya/Tanpa Fakultas"
@@ -3788,7 +3853,7 @@ func UploadCertificateLogo(c *fiber.Ctx) error {
 	}
 
 	// It's a valid image, encode to WebP
-	filename := fmt.Sprintf("%s.webp", uuid.New().String())
+	filename := fmt.Sprintf("%s.jpg", uuid.New().String())
 	uploadDir := "./uploads/kencana/logo"
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create upload directory"})
@@ -3801,10 +3866,10 @@ func UploadCertificateLogo(c *fiber.Ctx) error {
 	}
 	defer outFile.Close()
 
-	// Encode to WebP with 90% quality
-	options := &webp.Options{Lossless: false, Quality: 90}
-	if err := webp.Encode(outFile, img, options); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to convert image to WebP"})
+	// Encode to JPEG with 90% quality
+	options := &jpeg.Options{Quality: 90}
+	if err := jpeg.Encode(outFile, img, options); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to convert image to JPEG"})
 	}
 
 	url := fmt.Sprintf("/uploads/kencana/logo/%s", filename)
@@ -3852,7 +3917,7 @@ func UploadCertificateLeftLogo(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"url": url})
 	}
 
-	filename := fmt.Sprintf("%s.webp", uuid.New().String())
+	filename := fmt.Sprintf("%s.jpg", uuid.New().String())
 	uploadDir := "./uploads/kencana/logo"
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create upload directory"})
@@ -3865,9 +3930,9 @@ func UploadCertificateLeftLogo(c *fiber.Ctx) error {
 	}
 	defer outFile.Close()
 
-	options := &webp.Options{Lossless: false, Quality: 90}
-	if err := webp.Encode(outFile, img, options); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to convert image to WebP"})
+	options := &jpeg.Options{Quality: 90}
+	if err := jpeg.Encode(outFile, img, options); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to convert image to JPEG"})
 	}
 
 	url := fmt.Sprintf("/uploads/kencana/logo/%s", filename)
@@ -3915,7 +3980,7 @@ func UploadCertificateRightLogo(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"url": url})
 	}
 
-	filename := fmt.Sprintf("%s.webp", uuid.New().String())
+	filename := fmt.Sprintf("%s.jpg", uuid.New().String())
 	uploadDir := "./uploads/kencana/logo"
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create upload directory"})
@@ -3928,9 +3993,9 @@ func UploadCertificateRightLogo(c *fiber.Ctx) error {
 	}
 	defer outFile.Close()
 
-	options := &webp.Options{Lossless: false, Quality: 90}
-	if err := webp.Encode(outFile, img, options); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to convert image to WebP"})
+	options := &jpeg.Options{Quality: 90}
+	if err := jpeg.Encode(outFile, img, options); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to convert image to JPEG"})
 	}
 
 	url := fmt.Sprintf("/uploads/kencana/logo/%s", filename)
@@ -4015,6 +4080,48 @@ func CreateAnnouncement(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "data": pengumuman, "message": "Pengumuman berhasil dikirim"})
 }
 
+func UpdateAnnouncement(c *fiber.Ctx) error {
+	role, fakultasID := kencanaAdminScope(c)
+	id := c.Params("id")
+	var pengumuman models.KencanaPengumuman
+	q := config.DB
+	if role == "kencana_fakultas" {
+		q = q.Where("scope_type = ? AND (fakultas_id IS NULL OR fakultas_id = ?)", "faculty", fakultasID)
+	}
+	if err := q.First(&pengumuman, id).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{"success": false, "message": "Pengumuman tidak ditemukan"})
+	}
+
+	type reqBody struct {
+		Judul      string `json:"judul"`
+		Isi        string `json:"isi"`
+		TargetRole string `json:"target_role"`
+	}
+	var req reqBody
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Format request tidak valid"})
+	}
+
+	if req.Judul != "" {
+		pengumuman.Judul = req.Judul
+	}
+	if req.Isi != "" {
+		pengumuman.Isi = req.Isi
+	}
+	if req.TargetRole != "" {
+		validTargets := map[string]bool{"mahasiswa": true, "mentor": true, "both": true}
+		if !validTargets[req.TargetRole] {
+			return c.Status(400).JSON(fiber.Map{"success": false, "message": "Target role tidak valid"})
+		}
+		pengumuman.TargetRole = req.TargetRole
+	}
+
+	if err := config.DB.Save(&pengumuman).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal memperbarui pengumuman"})
+	}
+	return c.JSON(fiber.Map{"success": true, "message": "Pengumuman berhasil diperbarui"})
+}
+
 func DeleteAnnouncement(c *fiber.Ctx) error {
 	role, fakultasID := kencanaAdminScope(c)
 	id := c.Params("id")
@@ -4046,9 +4153,9 @@ func broadcastAnnouncement(db *gorm.DB, p models.KencanaPengumuman, fakultasID u
 			Where("LOWER(public.users.role) = ?", "mahasiswa").
 			Where(`mahasiswa.mahasiswa.tahun_masuk = ? OR 
 				mahasiswa.mahasiswa.id IN (SELECT student_id FROM mahasiswa.kencana_group_members WHERE period_id = ? AND status = 'active') OR 
-				mahasiswa.mahasiswa.id IN (SELECT student_id FROM mahasiswa.kencana_mentor_assignments WHERE period_id = ? AND status = 'active')`, 
+				mahasiswa.mahasiswa.id IN (SELECT student_id FROM mahasiswa.kencana_mentor_assignments WHERE period_id = ? AND status = 'active')`,
 				activePeriod.Year, activePeriod.ID, activePeriod.ID)
-		
+
 		if p.ScopeType == "faculty" && p.FakultasID != nil {
 			q = q.Where("public.users.fakultas_id = ?", *p.FakultasID)
 		}

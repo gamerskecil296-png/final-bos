@@ -21,6 +21,29 @@ func mentorGroup(db *gorm.DB, periodID uint, mentorID uint) *models.KencanaGroup
 	return nil
 }
 
+func MentorGetAnnouncements(c *fiber.Ctx) error {
+	mentor, err := currentMentor(c)
+	if err != nil {
+		return err
+	}
+	period, err := activePeriod(config.DB)
+	if err != nil {
+		return c.JSON(fiber.Map{"success": true, "data": []models.KencanaPengumuman{}})
+	}
+
+	var announcements []models.KencanaPengumuman
+	err = config.DB.Where("period_id = ? AND target_role IN ?", period.ID, []string{"mentor", "both"}).
+		Where("scope_type = 'university' OR (scope_type = 'faculty' AND fakultas_id = ?)", mentor.FakultasID).
+		Order("created_at desc").
+		Find(&announcements).Error
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal mengambil pengumuman"})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": announcements})
+}
+
 func MentorDashboard(c *fiber.Ctx) error {
 	mentor, err := currentMentor(c)
 	if err != nil {
@@ -32,14 +55,56 @@ func MentorDashboard(c *fiber.Ctx) error {
 	}
 	var count int64
 	mg := mentorGroup(config.DB, period.ID, mentor.ID)
+	
+	var studentIDs []uint
 	if mg != nil {
 		config.DB.Model(&models.KencanaGroupMember{}).
 			Where("group_id = ? AND status IN ?", mg.ID, []string{"active", "pending"}).
 			Count(&count)
+		
+		config.DB.Model(&models.KencanaGroupMember{}).
+			Where("group_id = ? AND status = ?", mg.ID, "active").
+			Pluck("student_id", &studentIDs)
 	} else {
-		config.DB.Model(&models.KencanaMentorAssignment{}).Where("period_id = ? AND mentor_id = ? AND status = ?", period.ID, mentor.ID, "active").Count(&count)
+		config.DB.Model(&models.KencanaMentorAssignment{}).
+			Where("period_id = ? AND mentor_id = ? AND status = ?", period.ID, mentor.ID, "active").
+			Count(&count)
+
+		config.DB.Model(&models.KencanaMentorAssignment{}).
+			Where("period_id = ? AND mentor_id = ? AND status = ?", period.ID, mentor.ID, "active").
+			Pluck("student_id", &studentIDs)
 	}
-	return c.JSON(fiber.Map{"success": true, "data": fiber.Map{"mentor": mentor, "period": period, "student_count": count, "group": mg}})
+
+	var pendingHandbooks int64 = 0
+	var passedStudents int64 = 0
+	var remedialStudents int64 = 0
+
+	if len(studentIDs) > 0 {
+		config.DB.Model(&models.KencanaHandbook{}).
+			Where("period_id = ? AND student_id IN ? AND status = ?", period.ID, studentIDs, "submitted").
+			Count(&pendingHandbooks)
+
+		config.DB.Model(&models.KencanaScore{}).
+			Where("period_id = ? AND student_id IN ? AND scope_type = ? AND graduation_status = ?", period.ID, studentIDs, mentor.ScopeType, "passed").
+			Count(&passedStudents)
+
+		config.DB.Model(&models.KencanaScore{}).
+			Where("period_id = ? AND student_id IN ? AND scope_type = ? AND graduation_status IN ?", period.ID, studentIDs, mentor.ScopeType, []string{"remedial", "conditional_pass", "not_eligible"}).
+			Count(&remedialStudents)
+	}
+
+	return c.JSON(fiber.Map{
+		"success": true, 
+		"data": fiber.Map{
+			"mentor":            mentor, 
+			"period":            period, 
+			"student_count":     count, 
+			"group":             mg,
+			"pending_handbooks": pendingHandbooks,
+			"passed_students":   passedStudents,
+			"remedial_students": remedialStudents,
+		},
+	})
 }
 
 func MentorProfile(c *fiber.Ctx) error {
@@ -197,11 +262,14 @@ func MentorStudents(c *fiber.Ctx) error {
 		byID[s.ID] = s
 	}
 
+	seenStudentIDs := map[uint]bool{}
+
 	for _, a := range assignments {
 		s, ok := byID[a.StudentID]
-		if !ok {
+		if !ok || seenStudentIDs[a.StudentID] {
 			continue
 		}
+		seenStudentIDs[a.StudentID] = true
 		data = append(data, fiber.Map{
 			"id": a.ID, "period_id": a.PeriodID, "mentor_id": a.MentorID, "student_id": a.StudentID, "status": a.Status, "type": "assignment",
 			"student": fiber.Map{"id": s.ID, "nim": s.NIM, "nama": s.Nama, "fakultas": s.Fakultas.Nama, "program_studi": s.ProgramStudi.Nama},
@@ -209,9 +277,10 @@ func MentorStudents(c *fiber.Ctx) error {
 	}
 	for _, m := range members {
 		s, ok := byID[m.StudentID]
-		if !ok {
+		if !ok || seenStudentIDs[m.StudentID] {
 			continue
 		}
+		seenStudentIDs[m.StudentID] = true
 		data = append(data, fiber.Map{
 			"id": m.ID, "period_id": m.PeriodID, "group_id": m.GroupID, "student_id": m.StudentID, "status": m.Status, "type": "group",
 			"student": fiber.Map{"id": s.ID, "nim": s.NIM, "nama": s.Nama, "fakultas": s.Fakultas.Nama, "program_studi": s.ProgramStudi.Nama},
@@ -681,7 +750,7 @@ func MentorUpsertBulkScoreItems(c *fiber.Ctx) error {
 func mentorCanWriteScoreItem(component string, itemName string) bool {
 	component = strings.ToLower(strings.TrimSpace(component))
 	itemName = strings.ToLower(strings.TrimSpace(itemName))
-	return component == "psychomotor" || component == "affective" || component == "requirements" || (component == "cognitive" && itemName == "handbook")
+	return component == "psychomotor" || component == "affective" || component == "requirements" || (component == "cognitive" && (itemName == "handbook" || strings.HasPrefix(itemName, "assignment #")))
 }
 
 func MentorReviewHandbook(c *fiber.Ctx) error {
@@ -790,7 +859,6 @@ func MentorGetGroup(c *fiber.Ctx) error {
 
 	var scoreMap = make(map[uint]models.KencanaScore)
 	var itemsMap = make(map[uint][]models.KencanaScoreItem)
-	var attMap = make(map[uint]int)
 
 	if len(studentIDs) > 0 {
 		var scores []models.KencanaScore
@@ -804,12 +872,6 @@ func MentorGetGroup(c *fiber.Ctx) error {
 		for _, it := range items {
 			itemsMap[it.StudentID] = append(itemsMap[it.StudentID], it)
 		}
-
-		var attendances []models.KencanaAttendance
-		config.DB.Where("student_id IN ? AND period_id = ? AND status = 'present'", studentIDs, group.PeriodID).Find(&attendances)
-		for _, att := range attendances {
-			attMap[att.StudentID]++
-		}
 	}
 
 	baseResp := groupResponse(group)
@@ -820,7 +882,9 @@ func MentorGetGroup(c *fiber.Ctx) error {
 		st := m.Student
 		sc := scoreMap[m.StudentID]
 		it := itemsMap[m.StudentID]
-		hadir := attMap[m.StudentID]
+		attInfo := attendanceSummary(config.DB, group.PeriodID, m.StudentID)
+		hadir := attInfo.AttendedSessions
+		perc := attInfo.Percentage
 
 		detailedMembers = append(detailedMembers, fiber.Map{
 			"id":         m.ID,
@@ -835,16 +899,17 @@ func MentorGetGroup(c *fiber.Ctx) error {
 				"program_studi_name": st.ProgramStudi.Nama,
 			},
 			"score_details": fiber.Map{
-				"final_score":          sc.FinalScore,
-				"graduation_status":    sc.GraduationStatus,
-				"cognitive_average":    sc.CognitiveAverage,
-				"psychomotor_average":  sc.PsychomotorAverage,
-				"affective_average":    sc.AffectiveAverage,
-				"cognitive_weighted":   sc.CognitiveWeighted,
-				"psychomotor_weighted": sc.PsychomotorWeighted,
-				"affective_weighted":   sc.AffectiveWeighted,
-				"attendance_count":     hadir,
-				"items":                it,
+				"final_score":           sc.FinalScore,
+				"graduation_status":     sc.GraduationStatus,
+				"cognitive_average":     sc.CognitiveAverage,
+				"psychomotor_average":   sc.PsychomotorAverage,
+				"affective_average":     sc.AffectiveAverage,
+				"cognitive_weighted":    sc.CognitiveWeighted,
+				"psychomotor_weighted":  sc.PsychomotorWeighted,
+				"affective_weighted":    sc.AffectiveWeighted,
+				"attendance_count":      hadir,
+				"attendance_percentage": perc,
+				"items":                 it,
 			},
 		})
 	}
@@ -1062,9 +1127,9 @@ func MentorListSessions(c *fiber.Ctx) error {
 		Where("mahasiswa.kencana_stages.period_id = ?", period.ID)
 
 	if mentor.ScopeType == "faculty" && mentor.FakultasID != nil {
-		q = q.Where("mahasiswa.kencana_sessions.fakultas_id = ?", *mentor.FakultasID)
+		q = q.Where("(mahasiswa.kencana_stages.fakultas_id IS NULL OR mahasiswa.kencana_stages.fakultas_id = ?)", *mentor.FakultasID)
 	} else {
-		q = q.Where("mahasiswa.kencana_sessions.fakultas_id IS NULL")
+		q = q.Where("mahasiswa.kencana_stages.fakultas_id IS NULL")
 	}
 
 	q.Order("start_date asc").Find(&sessions)
@@ -1079,6 +1144,135 @@ func MentorListSessions(c *fiber.Ctx) error {
 		})
 	}
 	return c.JSON(fiber.Map{"success": true, "data": data})
+}
+
+// MentorListAbsenceRequests - List all pending absence/permission requests from mentor's students
+func MentorListAbsenceRequests(c *fiber.Ctx) error {
+	mentor, err := currentMentor(c)
+	if err != nil {
+		return err
+	}
+	period, err := activePeriod(config.DB)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Periode aktif tidak ditemukan"})
+	}
+
+	var groupMembers []models.KencanaGroupMember
+	config.DB.Joins("JOIN mahasiswa.kencana_groups ON mahasiswa.kencana_groups.id = mahasiswa.kencana_group_members.group_id").
+		Where("mahasiswa.kencana_groups.period_id = ? AND mahasiswa.kencana_groups.mentor_id = ? AND mahasiswa.kencana_group_members.status = ?", period.ID, mentor.ID, "active").
+		Preload("Student").
+		Find(&groupMembers)
+
+	studentIDs := []uint{}
+	for _, gm := range groupMembers {
+		studentIDs = append(studentIDs, gm.StudentID)
+	}
+
+	if len(studentIDs) == 0 {
+		return c.JSON(fiber.Map{"success": true, "data": []fiber.Map{}})
+	}
+
+	var requests []models.KencanaAttendance
+	config.DB.Where("student_id IN ? AND status = ?", studentIDs, "permission_requested").
+		Preload("Session").
+		Find(&requests)
+
+	var data []fiber.Map
+	for _, r := range requests {
+		var studentName string
+		for _, gm := range groupMembers {
+			if gm.StudentID == r.StudentID {
+				studentName = gm.Student.Nama
+				break
+			}
+		}
+		data = append(data, fiber.Map{
+			"id":             r.ID,
+			"session_id":     r.SessionID,
+			"session_title":  r.Session.Title,
+			"student_id":     r.StudentID,
+			"student_name":   studentName,
+			"reason":         r.Reason,
+			"attachment_url": r.AttachmentURL,
+			"checked_at":     r.CheckedAt,
+		})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": data})
+}
+
+// MentorRespondAbsenceRequest - Approve or reject a student's absence/permission request
+func MentorRespondAbsenceRequest(c *fiber.Ctx) error {
+	mentor, err := currentMentor(c)
+	if err != nil {
+		return err
+	}
+	attendanceID, err := c.ParamsInt("id")
+	if err != nil || attendanceID == 0 {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "ID permohonan tidak valid"})
+	}
+
+	var req struct {
+		Action string `json:"action"` // "approved" or "rejected"
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Data tidak valid"})
+	}
+
+	if req.Action != "approved" && req.Action != "rejected" {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Aksi harus 'approved' atau 'rejected'"})
+	}
+
+	var attendance models.KencanaAttendance
+	if err := config.DB.First(&attendance, attendanceID).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{"success": false, "message": "Permohonan tidak ditemukan"})
+	}
+
+	if attendance.Status != "permission_requested" {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Permohonan sudah diproses sebelumnya"})
+	}
+
+	// Verify student belongs to this mentor's group
+	period, err := activePeriod(config.DB)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Periode aktif tidak ditemukan"})
+	}
+
+	var count int64
+	config.DB.Model(&models.KencanaGroupMember{}).
+		Joins("JOIN mahasiswa.kencana_groups ON mahasiswa.kencana_groups.id = mahasiswa.kencana_group_members.group_id").
+		Where("mahasiswa.kencana_groups.period_id = ? AND mahasiswa.kencana_groups.mentor_id = ? AND mahasiswa.kencana_group_members.student_id = ? AND mahasiswa.kencana_group_members.status = ?",
+			period.ID, mentor.ID, attendance.StudentID, "active").
+		Count(&count)
+
+	if count == 0 {
+		return c.Status(403).JSON(fiber.Map{"success": false, "message": "Mahasiswa bukan anggota kelompok Anda"})
+	}
+
+	now := time.Now()
+	if req.Action == "approved" {
+		attendance.Status = "permission"
+	} else {
+		attendance.Status = "absent"
+	}
+	attendance.CheckedAt = &now
+	checkedBy := mentor.UserID
+	attendance.CheckedBy = &checkedBy
+	config.DB.Save(&attendance)
+
+	actionLabel := "diterima"
+	if req.Action == "rejected" {
+		actionLabel = "ditolak"
+	}
+
+	notifikasi.Kirim(config.DB, notifikasi.KirimParams{
+		MahasiswaID: attendance.StudentID,
+		Type:        "kencana",
+		Title:       "Pengajuan Izin Kencana",
+		Content:     "Pengajuan izin presensi Kencana Anda telah " + actionLabel + ".",
+	})
+
+	return c.JSON(fiber.Map{"success": true, "message": "Permohonan izin berhasil " + actionLabel})
 }
 
 // MentorGetSessionQR generates a short-lived JWT QR token for student attendance
@@ -1134,4 +1328,230 @@ func ValidateQRToken(tokenString string) (sessionID uint, mentorID uint, err err
 	sessionID = uint(claims["session_id"].(float64))
 	mentorID = uint(claims["mentor_id"].(float64))
 	return
+}
+
+func MentorBulkScores(c *fiber.Ctx) error {
+	mentor, err := currentMentor(c)
+	if err != nil {
+		return err
+	}
+	period, err := activePeriod(config.DB)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Periode aktif tidak ditemukan"})
+	}
+
+	scopeType := mentor.ScopeType
+	if scopeType == "" {
+		scopeType = "university"
+	}
+
+	var studentIDs []uint
+	mg := mentorGroup(config.DB, period.ID, mentor.ID)
+	if mg != nil {
+		config.DB.Model(&models.KencanaGroupMember{}).
+			Where("group_id = ? AND status = ?", mg.ID, "active").
+			Pluck("student_id", &studentIDs)
+	} else {
+		config.DB.Model(&models.KencanaMentorAssignment{}).
+			Where("period_id = ? AND mentor_id = ? AND status = ?", period.ID, mentor.ID, "active").
+			Pluck("student_id", &studentIDs)
+	}
+
+	if len(studentIDs) == 0 {
+		return c.JSON(fiber.Map{"success": true, "data": fiber.Map{
+			"mentor_scope":      scopeType,
+			"scores":            []models.KencanaScore{},
+			"items":             []models.KencanaScoreItem{},
+			"score_definitions": mentorScoreDefinitions(period.ID, scopeType, mentor.FakultasID),
+		}})
+	}
+
+	var scores []models.KencanaScore
+	qScores := config.DB.Where("period_id = ? AND student_id IN ? AND scope_type = ?", period.ID, studentIDs, scopeType)
+	if scopeType == "fakultas" && mentor.FakultasID != nil && *mentor.FakultasID != 0 {
+		qScores = qScores.Where("fakultas_id = ?", mentor.FakultasID)
+	}
+	qScores.Find(&scores)
+
+	var items []models.KencanaScoreItem
+	qItems := config.DB.Where("period_id = ? AND student_id IN ? AND scope_type = ?", period.ID, studentIDs, scopeType)
+	if scopeType == "fakultas" && mentor.FakultasID != nil && *mentor.FakultasID != 0 {
+		qItems = qItems.Where("fakultas_id = ?", mentor.FakultasID)
+	}
+	qItems.Find(&items)
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"data": fiber.Map{
+			"mentor_scope":      scopeType,
+			"scores":            scores,
+			"items":             items,
+			"score_definitions": mentorScoreDefinitions(period.ID, scopeType, mentor.FakultasID),
+		},
+	})
+}
+
+func MentorSubmitBulkScores(c *fiber.Ctx) error {
+	mentor, err := currentMentor(c)
+	if err != nil {
+		return err
+	}
+	period, err := activePeriod(config.DB)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Periode aktif tidak ditemukan"})
+	}
+
+	type StudentBulkScore struct {
+		StudentID uint `json:"student_id"`
+		Items     []struct {
+			Component string  `json:"component"`
+			ItemName  string  `json:"item_name"`
+			Score     float64 `json:"score"`
+			Notes     string  `json:"notes"`
+		} `json:"items"`
+	}
+	type BulkScoresReq struct {
+		Scores []StudentBulkScore `json:"scores"`
+	}
+
+	var req BulkScoresReq
+	if err := c.BodyParser(&req); err != nil || len(req.Scores) == 0 {
+		return c.Status(400).JSON(fiber.Map{"success": false, "message": "Payload tidak valid"})
+	}
+
+	uid, _ := userID(c)
+	now := time.Now().UTC()
+	scopeType := mentor.ScopeType
+	if scopeType == "" {
+		scopeType = "university"
+	}
+
+	// Fetch valid student IDs for this mentor to prevent unauthorized grading
+	var allowedIDs []uint
+	mg := mentorGroup(config.DB, period.ID, mentor.ID)
+	if mg != nil {
+		config.DB.Model(&models.KencanaGroupMember{}).
+			Where("group_id = ? AND status = ?", mg.ID, "active").
+			Pluck("student_id", &allowedIDs)
+	} else {
+		config.DB.Model(&models.KencanaMentorAssignment{}).
+			Where("period_id = ? AND mentor_id = ? AND status = ?", period.ID, mentor.ID, "active").
+			Pluck("student_id", &allowedIDs)
+	}
+
+	allowedMap := map[uint]bool{}
+	for _, id := range allowedIDs {
+		allowedMap[id] = true
+	}
+
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		for _, sScore := range req.Scores {
+			if !allowedMap[sScore.StudentID] {
+				continue // Skip unauthorized students
+			}
+
+			for _, it := range sScore.Items {
+				if !mentorCanWriteScoreItem(it.Component, it.ItemName) {
+					continue
+				}
+				if it.Score < 0 || it.Score > 100 {
+					continue
+				}
+
+				var existing models.KencanaScoreItem
+				qExisting := tx.Where("period_id = ? AND student_id = ? AND component = ? AND item_name = ? AND scope_type = ?",
+					period.ID, sScore.StudentID, it.Component, it.ItemName, scopeType)
+				if scopeType == "fakultas" && mentor.FakultasID != nil && *mentor.FakultasID != 0 {
+					qExisting = qExisting.Where("fakultas_id = ?", mentor.FakultasID)
+				}
+
+				err := qExisting.First(&existing).Error
+				if err == nil {
+					existing.Score = it.Score
+					existing.Notes = it.Notes
+					existing.AssessedBy = &uid
+					existing.AssessedAt = &now
+					if err := tx.Save(&existing).Error; err != nil {
+						return err
+					}
+				} else {
+					item := models.KencanaScoreItem{
+						PeriodID: period.ID, StudentID: sScore.StudentID, ScopeType: scopeType, FakultasID: mentor.FakultasID,
+						Component: it.Component, ItemName: it.ItemName,
+						Score: it.Score, SourceType: "manual",
+						AssessedBy: &uid, AssessedAt: &now, Notes: it.Notes,
+					}
+					if err := tx.Create(&item).Error; err != nil {
+						return err
+					}
+				}
+			}
+			calculateAndStoreScore(tx, period.ID, sScore.StudentID)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"success": false, "message": "Gagal menyimpan nilai bulk: " + err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "message": "Semua nilai berhasil disimpan"})
+}
+
+// MentorGetStudentAssignments fetches assignments and submissions for a student
+func MentorGetStudentAssignments(c *fiber.Ctx) error {
+	student, periodID, err := mentorStudentScope(c)
+	if err != nil {
+		return err
+	}
+
+	mentor, err := currentMentor(c)
+	if err != nil {
+		return err
+	}
+
+	var assignments []models.KencanaAssignment
+
+	q := config.DB.
+		Joins("JOIN mahasiswa.kencana_sessions ON mahasiswa.kencana_sessions.id = mahasiswa.kencana_assignments.session_id").
+		Joins("JOIN mahasiswa.kencana_stages ON mahasiswa.kencana_stages.id = mahasiswa.kencana_sessions.stage_id").
+		Where("mahasiswa.kencana_stages.period_id = ?", periodID).
+		Where("mahasiswa.kencana_assignments.status != ?", "draft")
+
+	if mentor.ScopeType == "faculty" && mentor.FakultasID != nil {
+		q = q.Where("(mahasiswa.kencana_stages.fakultas_id IS NULL OR mahasiswa.kencana_stages.fakultas_id = ?)", *mentor.FakultasID)
+	} else {
+		q = q.Where("mahasiswa.kencana_stages.fakultas_id IS NULL")
+	}
+
+	q.Find(&assignments)
+
+	var assignmentIDs []uint
+	for _, a := range assignments {
+		assignmentIDs = append(assignmentIDs, a.ID)
+	}
+
+	var submissions []models.KencanaAssignmentSubmission
+	if len(assignmentIDs) > 0 {
+		config.DB.Where("student_id = ? AND assignment_id IN ?", student.ID, assignmentIDs).Find(&submissions)
+	}
+
+	submissionMap := make(map[uint]models.KencanaAssignmentSubmission)
+	for _, sub := range submissions {
+		submissionMap[sub.AssignmentID] = sub
+	}
+
+	var data []fiber.Map
+	for _, a := range assignments {
+		sub, exists := submissionMap[a.ID]
+		if !exists {
+			sub = models.KencanaAssignmentSubmission{Status: "not_submitted"}
+		}
+		data = append(data, fiber.Map{
+			"assignment": a,
+			"submission": sub,
+		})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "data": data})
 }

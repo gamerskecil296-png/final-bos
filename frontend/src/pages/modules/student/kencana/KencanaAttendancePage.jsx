@@ -2,6 +2,14 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useKencanaAttendanceQuery, useKencanaDashboardQuery, useStudentSubmitAttendanceMutation } from '@/queries/useKencanaQuery';
 import { ErrorPanel, KencanaShell, LoadingPanel, ProgressBar, StatusBadge, fmtTime, fmtLongDate, isToday } from './components';
 import { PrimaryStatsCard } from '@/components/ui/StatsCard';
+import AbsenceModal from './AbsenceModal';
+
+const statusConfig = {
+  present: { label: 'Hadir', cls: 'bg-[var(--theme-success)]/10 text-[var(--theme-success)] border-[var(--theme-success)]/20' },
+  permission: { label: 'Izin', cls: 'bg-[var(--theme-warning)]/10 text-[var(--theme-warning)] border-[var(--theme-warning)]/20' },
+  permission_requested: { label: 'Menunggu Persetujuan', cls: 'bg-blue-50/80 text-blue-600 border-blue-200' },
+  absent: { label: 'Tidak Hadir', cls: 'bg-[var(--theme-error)]/10 text-[var(--theme-error)] border-[var(--theme-error)]/20' },
+};
 
 const ScannerModal = ({ isOpen, onClose, onScan }) => {
   const scannerRef = useRef(null);
@@ -63,6 +71,7 @@ const ScannerModal = ({ isOpen, onClose, onScan }) => {
 };
 
 export default function KencanaAttendancePage() {
+  const [absenceModalSession, setAbsenceModalSession] = useState(null);
   const { data, isLoading, isError } = useKencanaAttendanceQuery();
   const { data: dashboardData } = useKencanaDashboardQuery();
   const submitAttendance = useStudentSubmitAttendanceMutation();
@@ -86,6 +95,10 @@ export default function KencanaAttendancePage() {
 
   const summary = data?.summary || {};
   const details = data?.details || [];
+
+  const canSubmitAbsence = (item) => {
+    return item.status !== 'present' && item.status !== 'permission' && item.status !== 'permission_requested';
+  };
 
   return (
     <KencanaShell 
@@ -204,51 +217,72 @@ export default function KencanaAttendancePage() {
                     <th className="py-4 px-5">Tanggal Sesi</th>
                     <th className="py-4 px-5">Status</th>
                     <th className="py-4 px-5">Waktu Presensi</th>
+                    <th className="py-4 px-5">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--theme-border-muted)] text-sm">
-                  {details.map((item) => (
-                    <tr key={item.session_id} className="hover:bg-[var(--theme-bg)] transition-colors group">
-                      <td className="py-4 px-5 font-bold text-[var(--theme-text)]">
-                        <div className="flex items-center gap-2">
-                          <span>{item.title}</span>
-                          {isToday(item.start_date) && (
-                            <span className="inline-flex items-center rounded-lg bg-[var(--theme-warning)]/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-[var(--theme-warning)] border border-[var(--theme-warning)]/20">
-                              Hari Ini
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-5 font-semibold text-[var(--theme-text-muted)]">
-                        {fmtLongDate(item.start_date)}
-                      </td>
-                      <td className="py-4 px-5">
-                        <span className={`inline-flex rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border ${
-                          item.status === 'present' 
-                            ? 'bg-[var(--theme-success)]/10 text-[var(--theme-success)] border-[var(--theme-success)]/20' 
-                            : 'bg-[var(--theme-error)]/10 text-[var(--theme-error)] border-[var(--theme-error)]/20'
-                        }`}>
-                          {item.status === 'present' ? 'Hadir' : 'Tidak Hadir'}
-                        </span>
-                      </td>
-                      <td className="py-4 px-5 font-bold text-[var(--theme-text)]">
-                        {item.status === 'present' && item.checked_at ? (
-                          <div className="flex items-center gap-1.5 text-[var(--theme-success)]">
-                            <span className="material-symbols-outlined text-base">schedule</span>
-                            {fmtTime(item.checked_at)}
+                  {details.map((item) => {
+                    const cfg = statusConfig[item.status] || statusConfig.absent;
+                    return (
+                      <tr key={item.session_id} className="hover:bg-[var(--theme-bg)] transition-colors group">
+                        <td className="py-4 px-5 font-bold text-[var(--theme-text)]">
+                          <div className="flex items-center gap-2">
+                            <span>{item.title}</span>
+                            {isToday(item.start_date) && (
+                              <span className="inline-flex items-center rounded-lg bg-[var(--theme-warning)]/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-[var(--theme-warning)] border border-[var(--theme-warning)]/20">
+                                Hari Ini
+                              </span>
+                            )}
                           </div>
-                        ) : (
-                          <span className="text-[var(--theme-text-subtle)] font-bold">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="py-4 px-5 font-semibold text-[var(--theme-text-muted)]">
+                          {fmtLongDate(item.start_date)}
+                        </td>
+                        <td className="py-4 px-5">
+                          <span className={`inline-flex rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border ${cfg.cls}`}>
+                            {cfg.label}
+                          </span>
+                        </td>
+                        <td className="py-4 px-5 font-bold text-[var(--theme-text)]">
+                          {item.status === 'present' && item.checked_at ? (
+                            <div className="flex items-center gap-1.5 text-[var(--theme-success)]">
+                              <span className="material-symbols-outlined text-base">schedule</span>
+                              {fmtTime(item.checked_at)}
+                            </div>
+                          ) : item.status === 'permission' && item.checked_at ? (
+                            <div className="flex items-center gap-1.5 text-[var(--theme-warning)]">
+                              <span className="material-symbols-outlined text-base">schedule</span>
+                              {fmtTime(item.checked_at)}
+                            </div>
+                          ) : (
+                            <span className="text-[var(--theme-text-subtle)] font-bold">—</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-5">
+                          {canSubmitAbsence(item) && (
+                            <button
+                              onClick={() => setAbsenceModalSession(item)}
+                              className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border border-orange-300 text-orange-600 bg-orange-50 hover:bg-orange-100 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-sm">edit_note</span>
+                              Ajukan Izin
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </section>
       </div>
+      <AbsenceModal
+        isOpen={!!absenceModalSession}
+        onClose={() => setAbsenceModalSession(null)}
+        session={absenceModalSession}
+      />
       <ScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}

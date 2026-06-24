@@ -60,8 +60,8 @@ export default function ProfilePage() {
           subtitle="Kelola informasi identitas, keamanan kata sandi, dan preferensi notifikasi secara mandiri."
           icon="account_circle"
           breadcrumbs={[
-            { label: 'Student Hub', path: '/app/student/dashboard' },
-            { label: 'Profil Akun', path: '/app/student/profile' }
+            { label: 'Student Hub', path: '/student/dashboard' },
+            { label: 'Profil Akun', path: '/student/profile' }
           ]}
         />
         

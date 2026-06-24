@@ -183,6 +183,22 @@ export const useBandingQuery = () => useQuery({
   queryFn: async () => unwrap(await api.get('/kencana-student/banding')) 
 });
 
+export const useStudentAnnouncementsQuery = (options = {}) => {
+  const { pathname } = useLocation();
+  return useQuery({
+    queryKey: ['kencana', 'announcements'],
+    queryFn: async () => {
+      try {
+        return unwrap(await api.get('/kencana-student/announcements'));
+      } catch (err) {
+        return [];
+      }
+    },
+    retry: false,
+    enabled: isKencanaPath(pathname) && (options.enabled ?? true),
+  });
+};
+
 export const useGenerateSertifikatMutation = () => useMutation({ mutationFn: async () => ({}) });
 
 export const useStudentSubmitAttendanceMutation = () => {

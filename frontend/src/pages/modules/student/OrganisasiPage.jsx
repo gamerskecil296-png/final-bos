@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { PageContent, PageHeader } from '@/components/ui/page';
+import { PageContent } from '@/components/ui/page';
+import { DashboardHero } from '@/components/ui/dashboard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/Dialog';
 import {
   useOrganisasiListQuery,
@@ -38,7 +39,7 @@ export default function OrganisasiPage() {
   const { data: ormawaList, isLoading: isOrmawaLoading } = useOrmawaListQuery();
   const { data: pendaftaranList } = usePendaftaranListQuery();
   const { hasPermission } = usePermission();
-  const canManageOrmawa = hasPermission('ormawa.create') || hasPermission('ormawa.manage') || hasPermission('ormawa.update') || hasPermission('ormawa.delete');
+  const canManageOrmawa = hasPermission('ormawa.create') || hasPermission('ormawa.manage') || hasPermission('ormawa.update') || hasPermission('ormawa.delete') || hasPermission('student.organizations.create') || hasPermission('student.organizations.update') || hasPermission('student.organizations.delete');
 
   const getRecruitmentStatus = (org) => {
     if (!org.open_recruitment) {
@@ -425,46 +426,51 @@ export default function OrganisasiPage() {
     }
   ];
 
+  const totalOrganisasiAktif = list?.filter(p => ['Terverifikasi', 'Diverifikasi', 'Valid', 'Disetujui', 'Aktif'].includes(p.StatusVerifikasi)).length || 0;
+  const totalPendaftaranPending = pendaftaranList?.filter(p => p.Status?.toLowerCase() === 'pending' || p.Status?.toLowerCase() === 'menunggu').length || 0;
+  const totalOrmawaBuka = ormawaList?.filter(org => getRecruitmentStatus(org).isOpen).length || 0;
+
   return (
     <PageContent className="font-body">
 
       <div className="max-w-7xl mx-auto">
-        <PageHeader
-          title="Portfolio Keorganisasian"
-          subtitle="Portofolio keaktifan organisasi kemahasiswaan dan pendaftaran Ormawa."
-          icon="group"
-          breadcrumbs={[
-            { label: 'Dashboard', path: '/app/student/dashboard' },
-            { label: 'Organisasi', path: '/app/student/organisasi' }
+        <DashboardHero
+          title="Pusat Organisasi Mahasiswa"
+          subtitle="Kelola portofolio keaktifan dan temukan organisasi kemahasiswaan yang sesuai dengan minat Anda."
+          icon="groups"
+          theme="warning"
+          stats={[
+            { label: 'Organisasi Diikuti', value: totalOrganisasiAktif, icon: 'military_tech' },
+            { label: 'Menunggu Persetujuan', value: totalPendaftaranPending, icon: 'hourglass_empty' },
+            { label: 'Ormawa Buka Pendaftaran', value: totalOrmawaBuka, icon: 'campaign' }
           ]}
         />
 
         {/* Navigation Tabs */}
-        <div className="flex flex-col sm:flex-row border-b border-border mb-8 sm:items-center sm:justify-between gap-4 print:hidden">
-          <div className="flex gap-6 overflow-x-auto no-scrollbar">
+        <div className="flex flex-wrap items-center gap-3 mb-6 bg-[var(--theme-bg)] p-2 rounded-2xl border border-[var(--theme-border-muted)] print:hidden w-max mt-4">
             <button
               onClick={() => setMainTab('portfolio')}
-              className={`pb-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${mainTab === 'portfolio' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-bku-text'
-                }`}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${mainTab === 'portfolio' ? 'bg-[var(--theme-primary)] text-white shadow-md' : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-surface)]'}`}
             >
               Keanggotaan & Riwayat ({combinedData.length})
             </button>
             <button
               onClick={() => setMainTab('daftar')}
-              className={`pb-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${mainTab === 'daftar' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-bku-text'
-                }`}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${mainTab === 'daftar' ? 'bg-[var(--theme-primary)] text-white shadow-md' : 'text-[var(--theme-text-muted)] hover:bg-[var(--theme-surface)]'}`}
             >
               Daftar Ormawa Baru
             </button>
-          </div>
+          
           {mainTab === 'portfolio' && canManageOrmawa && (
-            <button
-              onClick={() => { resetPortForm(); setEditingPort(null); setIsPortModalOpen(true); }}
-              className="mb-2 sm:mb-0 bg-primary text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:opacity-90 transition-all shadow-sm shadow-primary/20 active:scale-95"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '16px' }} >add</span>
-              Tambah Riwayat Organisasi
-            </button>
+            <div className="ml-auto pl-2 border-l border-[var(--theme-border-muted)]">
+              <button
+                onClick={() => { resetPortForm(); setEditingPort(null); setIsPortModalOpen(true); }}
+                className="bg-[var(--theme-primary)] text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:opacity-90 transition-all shadow-sm active:scale-95"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }} >add</span>
+                Tambah Riwayat Organisasi
+              </button>
+            </div>
           )}
         </div>
 
@@ -474,24 +480,95 @@ export default function OrganisasiPage() {
             <CardGridSkeleton count={4} />
           ) : (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <DataTable
-                title="Daftar Organisasi"
-                subtitle="Menampilkan daftar organisasi yang terdaftar."
-                columns={columns}
-                data={combinedData}
-                searchable={true}
-                searchPlaceholder="Cari organisasi atau jabatan..."
-                manualFiltering={true}
-                emptyStateProps={{
-                  icon: "Users",
-                  title: "Belum Ada Organisasi",
-                  description: "Belum ada catatan keaktifan organisasi atau pendaftaran.",
-                  iconBgClass: "bg-primary/10",
-                  iconBorderClass: "border-primary/20",
-                  actionLabel: "Daftar Ormawa",
-                  onAction: () => setMainTab('daftar')
-                }}
-              />
+              {combinedData.length === 0 ? (
+                <EmptyState
+                  icon="groups"
+                  title="Belum Ada Organisasi"
+                  description="Belum ada catatan keaktifan organisasi atau pendaftaran."
+                  action={
+                    <button onClick={() => setMainTab('daftar')} className="bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:opacity-90">
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>app_registration</span>
+                      Daftar Ormawa
+                    </button>
+                  }
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 print:hidden">
+                  {combinedData.map((row, idx) => {
+                    const val = row.status;
+                    let StatusBadge = null;
+                    if (val === 'Terverifikasi') {
+                      StatusBadge = <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-success/10 text-success border border-success/20 flex items-center gap-1 w-max"><span className="material-symbols-outlined text-[12px]">check_circle</span> {val}</span>;
+                    } else if (val === 'Menunggu' || val === 'Pending') {
+                      StatusBadge = <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-warning/10 text-warning border border-warning/20 flex items-center gap-1 w-max"><span className="material-symbols-outlined text-[12px]">schedule</span> {val}</span>;
+                    } else if (val === 'Ditolak' || val === 'Tidak Aktif') {
+                      StatusBadge = <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-error/10 text-error border border-error/20 flex items-center gap-1 w-max"><span className="material-symbols-outlined text-[12px]">cancel</span> {val}</span>;
+                    } else {
+                      StatusBadge = <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-background text-text-muted border border-border w-max">{val || 'Draft'}</span>;
+                    }
+
+                    let actionButtons = null;
+                    if (row._type === 'portfolio') {
+                      const item = row.raw;
+                      const isPending = item.StatusVerifikasi === 'Menunggu' || item.StatusVerifikasi === 'Pending';
+                      const isVerified = item.StatusVerifikasi === 'Terverifikasi' || item.StatusVerifikasi === 'Diverifikasi' || item.StatusVerifikasi === 'Valid' || item.StatusVerifikasi === 'Disetujui';
+                      actionButtons = (
+                        <div className="flex gap-2 items-center">
+                          {isVerified && (
+                            <button onClick={() => handlePrintCertificate(item)} className="p-1.5 text-success hover:bg-success/10 rounded-md transition-colors" title="Cetak Sertifikat">
+                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>print</span>
+                            </button>
+                          )}
+                          <button onClick={() => { setSelectedOrg(item); setActiveTab('ringkasan'); }} className="p-1.5 text-primary hover:bg-primary/10 rounded-md transition-colors" title="Detail">
+                            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>visibility</span>
+                          </button>
+                          {isPending && (
+                            <>
+                              <button onClick={() => handleEditPort(item)} className="p-1.5 text-warning hover:bg-warning/10 rounded-md transition-colors" title="Edit">
+                                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+                              </button>
+                              <button onClick={() => handleDeletePort(item.id || item.ID)} className="p-1.5 text-error hover:bg-error/10 rounded-md transition-colors" title="Hapus">
+                                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={row._id || idx} className="glass-card rounded-2xl p-5 flex flex-col gap-4 hover:border-[var(--theme-primary)]/20 hover:shadow-lg transition-all relative overflow-hidden">
+                        {row._type === 'pendaftaran' && (
+                          <div className="absolute top-0 right-0 bg-primary text-white text-[9px] font-black uppercase px-2 py-1 rounded-bl-lg shadow-sm">
+                            Pendaftaran
+                          </div>
+                        )}
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-extrabold text-bku-text text-base leading-tight pr-2">{row.ormawa_nama}</h3>
+                            <span className="text-xs text-text-muted mt-1 inline-block">{row.tipe}</span>
+                          </div>
+                          {actionButtons}
+                        </div>
+                        
+                        <div className="flex flex-col gap-1 mt-2">
+                          <span className="text-xs text-text-muted">Jabatan / Posisi</span>
+                          <span className="font-semibold text-bku-text text-sm">{row.jabatan}</span>
+                        </div>
+                        
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-text-muted">Periode</span>
+                          <span className="text-sm font-medium text-bku-text">{row.periode}</span>
+                        </div>
+
+                        <div className="mt-auto pt-4 border-t border-border flex justify-between items-center">
+                          {StatusBadge}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )
         )}
@@ -499,12 +576,12 @@ export default function OrganisasiPage() {
         {mainTab === 'daftar' && (
           isOrmawaLoading ? (
             <CardGridSkeleton count={3} />
-          ) : ormawaList?.length > 0 ? (
+          ) : ormawaList?.filter(org => getRecruitmentStatus(org).isOpen)?.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 print:hidden">
-              {ormawaList.map((org) => (
+              {ormawaList.filter(org => getRecruitmentStatus(org).isOpen).map((org) => (
                 <div
                   key={org.id || org.ID}
-                  className="bg-surface rounded-2xl border border-border p-5 flex flex-col gap-4 hover:border-primary/20 hover:shadow-lg transition-all"
+                  className="glass-card rounded-2xl p-5 flex flex-col gap-4 hover:border-[var(--theme-primary)]/20 hover:shadow-lg transition-all"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-lg shrink-0">
@@ -592,7 +669,7 @@ export default function OrganisasiPage() {
             </div>
           ) : (
             <EmptyState
-              icon="Users"
+              icon="groups"
               title="Tidak Ada Organisasi"
               description="Tidak ada organisasi mahasiswa aktif yang tersedia saat ini."
               iconBgClass="bg-primary/10"
@@ -606,19 +683,25 @@ export default function OrganisasiPage() {
 
       {/* Detail Modal */}
       <Dialog open={!!selectedOrg} onOpenChange={() => setSelectedOrg(null)} maxWidth="max-w-4xl">
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="p-0 overflow-hidden glass-card rounded-3xl border-0 shadow-2xl">
+          <DialogHeader className="p-8 pb-6 border-b border-[var(--theme-border-muted)] bg-[var(--theme-bg)]/50 relative">
             <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-              <span className="material-symbols-outlined text-8xl text-slate-900">group</span>
+              <span className="material-symbols-outlined text-8xl text-[var(--theme-primary)]">group</span>
             </div>
-            <div className="text-left relative z-10">
-              <p className="text-xs font-semibold text-[var(--theme-text-muted)] uppercase tracking-wider">Detail Organisasi</p>
-              <DialogTitle className="text-xl md:text-2xl font-extrabold mt-1 text-[var(--theme-text)] leading-tight">
-                {selectedOrg?.NamaOrganisasi}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-[var(--theme-text-muted)] mt-1">
-                {selectedOrg?.Jabatan} • {selectedOrg?.Tipe}
-              </DialogDescription>
+            <div className="text-left relative z-10 flex gap-4 items-start">
+              <div className="w-14 h-14 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-2xl flex items-center justify-center shrink-0 border border-[var(--theme-primary)]/20 shadow-inner">
+                 <span className="material-symbols-outlined" style={{ fontSize: 28 }}>corporate_fare</span>
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-[var(--theme-primary)] uppercase tracking-widest mb-1">Detail Organisasi</p>
+                <DialogTitle className="text-xl md:text-2xl font-black mt-1 text-[var(--theme-text)] leading-tight tracking-tight">
+                  {selectedOrg?.NamaOrganisasi}
+                </DialogTitle>
+                <DialogDescription className="text-xs font-bold text-[var(--theme-text-muted)] mt-2 flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-[var(--theme-surface)] border border-[var(--theme-border)] text-[var(--theme-text)]">{selectedOrg?.Jabatan}</span>
+                  <span className="px-2 py-0.5 rounded-md bg-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/20 text-[var(--theme-primary)] uppercase tracking-wider text-[9px]">{selectedOrg?.Tipe}</span>
+                </DialogDescription>
+              </div>
             </div>
           </DialogHeader>
 
@@ -679,7 +762,9 @@ export default function OrganisasiPage() {
               <div className="space-y-4">
                 <div className="rounded-2xl border border-[var(--theme-border)] p-4 bg-[var(--theme-bg)]">
                   <p className="text-xs text-[var(--theme-text-muted)]">Status Keanggotaan</p>
-                  <p className="text-base font-semibold text-[var(--theme-text)] mt-1">{selectedOrg.PeriodeSelesai ? 'Selesai/Purna' : 'Aktif'}</p>
+                  <p className="text-base font-semibold text-[var(--theme-text)] mt-1">
+                    {(!selectedOrg.PeriodeSelesai || selectedOrg.PeriodeSelesai >= new Date().getFullYear()) ? 'Aktif' : 'Selesai/Purna'}
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-[var(--theme-border)] p-4 bg-[var(--theme-bg)]">
                   <p className="text-xs text-[var(--theme-text-muted)]">Status Verifikasi</p>
@@ -702,7 +787,7 @@ export default function OrganisasiPage() {
 
       {/* Registration Modal — Step-by-step Wizard */}
       <Dialog open={!!selectedDaftarOrg} onOpenChange={closeDaftarModal} maxWidth="max-w-xl">
-        <DialogContent className="p-0 overflow-hidden bg-[var(--theme-surface)] rounded-3xl border-0 shadow-2xl">
+        <DialogContent className="p-0 overflow-hidden glass-card rounded-3xl border-0 shadow-2xl">
           {selectedDaftarOrg && (() => {
             const studentIPK = profile?.IPK || 0;
             const minIPK = selectedDaftarOrg.min_ipk || selectedDaftarOrg.MinIPK || 0;

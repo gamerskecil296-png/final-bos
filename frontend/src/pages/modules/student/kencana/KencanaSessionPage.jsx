@@ -8,15 +8,15 @@ export default function KencanaSessionPage() {
   const { sessionId } = useParams();
   const { data, isLoading, isError } = useKencanaSessionQuery(sessionId);
   const completeMaterial = useCompleteMaterialMutation();
-  if (isLoading) return <KencanaShell title="Detail Sesi" breadcrumbs={[{ label: 'Dashboard', to: '/app/student/kencana' }, { label: 'Detail Sesi' }]}><LoadingPanel /></KencanaShell>;
-  if (isError) return <KencanaShell title="Detail Sesi" breadcrumbs={[{ label: 'Dashboard', to: '/app/student/kencana' }, { label: 'Detail Sesi' }]}><ErrorPanel message="Sesi tidak ditemukan atau terkunci." /></KencanaShell>;
+  if (isLoading) return <KencanaShell title="Detail Sesi" breadcrumbs={[{ label: 'Dashboard', to: '/student/kencana' }, { label: 'Detail Sesi' }]}><LoadingPanel /></KencanaShell>;
+  if (isError) return <KencanaShell title="Detail Sesi" breadcrumbs={[{ label: 'Dashboard', to: '/student/kencana' }, { label: 'Detail Sesi' }]}><ErrorPanel message="Sesi tidak ditemukan atau terkunci." /></KencanaShell>;
   
 
   // Periksa apakah masih ada quiz di sesi ini yang belum dikerjakan (attempts_used === 0)
   const hasPendingQuizzes = (data?.quizzes || []).some(q => q.attempts_used === 0);
 
   return (
-    <KencanaShell title={data?.title || 'Detail Sesi'} subtitle={data?.description} breadcrumbs={[{ label: 'Dashboard', to: '/app/student/kencana' }, { label: data?.title || 'Detail Sesi' }]}>
+    <KencanaShell title={data?.title || 'Detail Sesi'} subtitle={data?.description} breadcrumbs={[{ label: 'Dashboard', to: '/student/kencana' }, { label: data?.title || 'Detail Sesi' }]}>
       <div className="grid gap-5 lg:grid-cols-[1fr_0.8fr]">
         <section className="glass-card p-6 shadow-sm">
           <h2 className="text-xl font-bold font-headline text-slate-800">Materi</h2>
@@ -101,7 +101,7 @@ export default function KencanaSessionPage() {
                         </div>
                       </div>
                       
-                      <PrimaryButton to={`/app/student/kencana/kuis/${q.id}`} className="w-full text-center block">
+                      <PrimaryButton to={`/student/kencana/kuis/${q.id}`} className="w-full text-center block">
                         Detail Quiz
                       </PrimaryButton>
                     </div>
@@ -123,7 +123,7 @@ export default function KencanaSessionPage() {
                 const isActive = a.status === 'published' && !isTooEarly && !isPastDue;
                 
                 return (
-                  <Link key={a.id} to={`/app/student/kencana/assignment/${a.id}`} className="block rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-[var(--theme-primary-light)] hover:shadow-sm transition-all overflow-hidden">
+                  <Link key={a.id} to={`/student/kencana/assignment/${a.id}`} className="block rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-[var(--theme-primary-light)] hover:shadow-sm transition-all overflow-hidden">
                     <div className={`h-1 w-full ${isActive ? 'bg-blue-500' : 'bg-slate-300'}`}></div>
                     <div className="p-4">
                       <div className="flex items-start justify-between gap-2 mb-2">

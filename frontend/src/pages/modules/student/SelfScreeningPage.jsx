@@ -128,7 +128,7 @@ export default function SelfScreeningPage() {
         subtitle="Isi data subjektif/gejala sebelum melakukan kunjungan ke klinik" 
         icon="medical_information" 
         breadcrumbs={[
-          { label: 'Student Hub', path: '/app/student/dashboard' },
+          { label: 'Student Hub', path: '/student/dashboard' },
           { label: 'Self-Screening' }
         ]} 
       />

@@ -31,7 +31,7 @@ export default function StudentPageHeader({
           
           {/* Breadcrumb Navigation */}
           <nav className="flex items-center gap-1.5 text-xs font-bold text-slate-400 flex-wrap mb-4">
-            <NavLink to="/app/student/dashboard" className="hover:text-primary transition-colors">Portal</NavLink>
+            <NavLink to="/student/dashboard" className="hover:text-primary transition-colors">Portal</NavLink>
             {breadcrumbs.map((bc, i) => (
               <React.Fragment key={i}>
                 <span>/</span>

@@ -12,7 +12,7 @@ export default function KencanaTimelinePage() {
     <KencanaShell title="Timeline Kencana" subtitle="Tahapan berasal dari jadwal yang dibuat dan dipublish admin, tanpa durasi hardcode." breadcrumbs={[{ label: 'Timeline' }]}>
       <div className="space-y-4">
         {stages.map((stage, index) => (
-          <Link key={stage.id} to={`/app/student/kencana/stage/${stage.id}`} className="group grid gap-4 glass-card p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-[var(--theme-primary-light)] md:grid-cols-[80px_1fr_auto]">
+          <Link key={stage.id} to={`/student/kencana/stage/${stage.id}`} className="group grid gap-4 glass-card p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-[var(--theme-primary-light)] md:grid-cols-[80px_1fr_auto]">
             <div className="grid size-16 place-items-center rounded-2xl bg-[var(--theme-primary)] text-xl font-bold font-headline text-white shadow-sm">{index + 1}</div>
             <div>
               <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-bold font-headline text-slate-800 leading-tight">{stage.name}</h2><StatusBadge status={stage.status} /></div>

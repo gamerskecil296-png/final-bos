@@ -108,11 +108,8 @@ func ensureDemoPeriod(db *gorm.DB, student *models.Mahasiswa) (*models.KencanaPe
 			Where("status IN ?", []string{"active", "published"}).
 			Order("start_date desc nulls last, created_at desc").
 			First(&existing).Error
-		if err == nil {
-			period = &existing
-			return nil
-		}
 		if err != gorm.ErrRecordNotFound {
+			period = &existing
 			return err
 		}
 		now := time.Now().UTC()
@@ -556,7 +553,7 @@ func attendanceSummary(db *gorm.DB, periodID, studentID uint) attendanceInfo {
 		return info
 	}
 	var attended int64
-	db.Model(&models.KencanaAttendance{}).Where("student_id = ? AND session_id IN ? AND status = ?", studentID, sessionIDs, "present").Count(&attended)
+	db.Model(&models.KencanaAttendance{}).Where("student_id = ? AND session_id IN ? AND status IN ?", studentID, sessionIDs, []string{"present", "permission"}).Count(&attended)
 	info.AttendedSessions = int(attended)
 	info.Percentage = roundScore(float64(attended) / float64(len(sessionIDs)) * 100)
 	if info.Percentage >= 100 {
@@ -603,3 +600,4 @@ func fetchStudentCertificates(db *gorm.DB, periodID, studentID uint) fiber.Map {
 	}
 	return result
 }
+

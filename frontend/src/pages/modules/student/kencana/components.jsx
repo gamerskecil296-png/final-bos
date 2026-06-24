@@ -59,16 +59,16 @@ export function isToday(value) {
 
 export function KencanaShell({ title, highlightedTitle, subtitle, actions, badges, breadcrumbs, children }) {
   const { pathname } = useLocation();
-  const isDashboard = pathname.endsWith('/app/student/kencana') || pathname.endsWith('/app/dashboard/student-kencana');
+  const isDashboard = pathname.endsWith('/student/kencana') || pathname.endsWith('/admin/student-kencana');
 
   const defaultBreadcrumbs = [
-    { label: 'Student Hub', path: '/app/student/dashboard' },
-    { label: 'Kencana', path: isDashboard ? null : '/app/student/kencana' }
+    { label: 'Student Hub', path: '/student/dashboard' },
+    { label: 'Kencana', path: isDashboard ? null : '/student/kencana' }
   ];
 
   const finalBreadcrumbs = breadcrumbs ? [
-    { label: 'Student Hub', path: '/app/student/dashboard' },
-    { label: 'Kencana', path: '/app/student/kencana' },
+    { label: 'Student Hub', path: '/student/dashboard' },
+    { label: 'Kencana', path: '/student/kencana' },
     ...breadcrumbs.map(bc => ({ label: bc.label, path: bc.to }))
   ] : defaultBreadcrumbs;
 

@@ -17,7 +17,7 @@ export default function KencanaCertificatePage() {
     <KencanaShell
       title="Sertifikat Kencana"
       subtitle="Sertifikat hanya dapat diunduh ketika status kelulusan sudah lulus dan seluruh syarat wajib terpenuhi."
-      actions={<PrimaryButton to="/app/student/kencana/score">Lihat Nilai</PrimaryButton>}
+      actions={<PrimaryButton to="/student/kencana/score">Lihat Nilai</PrimaryButton>}
     >
       <section className="grid gap-5 lg:grid-cols-[1fr_0.8fr]">
         <div className="glass-card p-8 shadow-sm">
@@ -43,7 +43,7 @@ export default function KencanaCertificatePage() {
             ) : (
               <PrimaryButton disabled>{eligible ? 'File belum diterbitkan' : 'Belum Bisa Diunduh'}</PrimaryButton>
             )}
-            <PrimaryButton to="/app/student/kencana/remedial">Cek Remedial</PrimaryButton>
+            <PrimaryButton to="/student/kencana/remedial">Cek Remedial</PrimaryButton>
           </div>
         </div>
 

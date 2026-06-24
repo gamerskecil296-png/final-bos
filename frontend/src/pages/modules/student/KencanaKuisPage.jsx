@@ -53,12 +53,12 @@ export default function KencanaKuisPage() {
 
   const fmt = (s) => `${String(Math.floor((s || 0) / 60)).padStart(2, '0')}:${String((s || 0) % 60).padStart(2, '0')}`;
 
-  if (isLoading) return <KencanaShell title="Quiz Kencana" breadcrumbs={[{ label: 'Timeline', to: '/app/student/kencana/timeline' }, { label: 'Quiz' }]}><LoadingPanel /></KencanaShell>;
-  if (isError) return <KencanaShell title="Quiz Kencana" breadcrumbs={[{ label: 'Timeline', to: '/app/student/kencana/timeline' }, { label: 'Quiz' }]}><ErrorPanel message="Quiz tidak ditemukan atau belum tersedia." /></KencanaShell>;
+  if (isLoading) return <KencanaShell title="Quiz Kencana" breadcrumbs={[{ label: 'Timeline', to: '/student/kencana/timeline' }, { label: 'Quiz' }]}><LoadingPanel /></KencanaShell>;
+  if (isError) return <KencanaShell title="Quiz Kencana" breadcrumbs={[{ label: 'Timeline', to: '/student/kencana/timeline' }, { label: 'Quiz' }]}><ErrorPanel message="Quiz tidak ditemukan atau belum tersedia." /></KencanaShell>;
 
   if (result) {
     return (
-      <KencanaShell title="Hasil Kuis" subtitle="Nilai kuis otomatis masuk ke rekapitulasi nilai Kencana." breadcrumbs={[{ label: 'Timeline', to: '/app/student/kencana' }, { label: 'Hasil Kuis' }]}>
+      <KencanaShell title="Hasil Kuis" subtitle="Nilai kuis otomatis masuk ke rekapitulasi nilai Kencana." breadcrumbs={[{ label: 'Timeline', to: '/student/kencana' }, { label: 'Hasil Kuis' }]}>
         <section className="mx-auto max-w-xl glass-card p-8 text-center">
           <div className="mx-auto grid size-20 place-items-center rounded-full bg-emerald-50 text-emerald-600 mb-6 border border-emerald-100"><span className="material-symbols-outlined" style={{ fontSize: 42 }}>check_circle</span></div>
           <h2 className="text-3xl font-bold font-headline text-slate-800 mb-2">Nilai Kuis: {Number(result.score || result.nilai || 0).toFixed(1)}</h2>
@@ -66,7 +66,7 @@ export default function KencanaKuisPage() {
           <div className="flex justify-center mb-8">
              <StatusBadge status={(result.passed || result.lulus) ? 'passed' : 'not_passed'} />
           </div>
-          <PrimaryButton onClick={() => navigate('/app/student/kencana/score')}>Lihat Rekap Nilai Kencana</PrimaryButton>
+          <PrimaryButton onClick={() => navigate('/student/kencana/score')}>Lihat Rekap Nilai Kencana</PrimaryButton>
         </section>
       </KencanaShell>
     );
@@ -74,7 +74,7 @@ export default function KencanaKuisPage() {
 
   if (!attempt) {
     return (
-      <KencanaShell title={data?.title || 'Kuis Kencana'} subtitle={data?.description} breadcrumbs={[{ label: 'Timeline', to: '/app/student/kencana' }, { label: data?.title || 'Kuis' }]}>
+      <KencanaShell title={data?.title || 'Kuis Kencana'} subtitle={data?.description} breadcrumbs={[{ label: 'Timeline', to: '/student/kencana' }, { label: data?.title || 'Kuis' }]}>
         <section className="glass-card p-6 md:p-8">
           <StatusBadge status={data?.can_start ? 'active' : 'locked'} />
           <h2 className="mt-4 text-xl font-bold font-headline text-slate-800">Instruksi Kuis</h2>
@@ -114,7 +114,7 @@ export default function KencanaKuisPage() {
   }
 
   return (
-    <KencanaShell title={data?.title || 'Kuis Kencana'} subtitle={`Sisa waktu ${fmt(timeLeft)} · ${Object.keys(answers).length}/${questions.length} soal terjawab`} breadcrumbs={[{ label: 'Timeline', to: '/app/student/kencana' }, { label: data?.title || 'Kuis' }]}>
+    <KencanaShell title={data?.title || 'Kuis Kencana'} subtitle={`Sisa waktu ${fmt(timeLeft)} · ${Object.keys(answers).length}/${questions.length} soal terjawab`} breadcrumbs={[{ label: 'Timeline', to: '/student/kencana' }, { label: data?.title || 'Kuis' }]}>
       <section className="space-y-4">
         {questions.map((q, idx) => (
           <article key={q.id} className="glass-card p-5 md:p-6 border border-slate-200">

@@ -149,13 +149,17 @@ func loadRolePermissions(c *fiber.Ctx, role string) []string {
 				return permissions
 			}
 		}
-	} else if role == "mahasiswa" {
-		// Mahasiswa uses "mahasiswa" as the key in the database
-		if err := config.DB.Where("key = ?", "mahasiswa").First(&rbacRole).Error; err == nil {
+	} else if role == "mahasiswa" || role == "student" {
+		// Try to get "student" role from DB
+		if err := config.DB.Where("key = ?", "student").First(&rbacRole).Error; err == nil {
 			var permissions []string
-			if err := json.Unmarshal(rbacRole.Permissions, &permissions); err == nil {
+			if err := json.Unmarshal(rbacRole.Permissions, &permissions); err == nil && len(permissions) > 0 {
 				return permissions
 			}
+		}
+		// Default fallback for mahasiswa/student
+		return []string{
+			"student.dashboard.view", "student.profile.view", "student.profile.update", "student.kencana.view", "student_kencana_view", "kencana.student.dashboard", "student.counseling.view", "student.health.view", "student.scholarship.view", "student.achievement.view", "student.organisasi.view", "student.voice.view", "student.achievements.view", "student.achievements.create", "student.achievements.update", "student.achievements.delete", "student.organizations.view", "student.organizations.create", "student.organizations.update", "student.organizations.delete", "student.health.records.view", "student.health.records.create", "student.health.records.update", "student.health.records.delete", "student.health.bookings.view", "student.health.bookings.create", "student.health.bookings.update", "student.health.bookings.delete", "student.counseling.create", "student.counseling.update", "student.counseling.delete", "student.scholarships.view", "student.scholarships.create", "student.aspirations.view", "student.aspirations.create", "student.aspirations.update",
 		}
 	} else if role == "admin_fakultas" || role == "faculty_admin" {
 		var rbacRole models.RBACRole
@@ -216,15 +220,6 @@ func RequirePermission(permKey string) fiber.Handler {
 			return c.Next()
 		}
 
-		// Mahasiswa is a default role, bypass specific permission checks for student actions
-		userRoles := strings.Split(strings.ToLower(role), ",")
-		for _, r := range userRoles {
-			r = strings.TrimSpace(r)
-			if r == "mahasiswa" && (strings.HasPrefix(permKey, "student.") || permKey == "student_kencana_view") {
-				return c.Next()
-			}
-		}
-
 		// Load permissions from locals (injected by JWT middleware)
 		permissions, ok := c.Locals("permissions").([]string)
 		if !ok || len(permissions) == 0 {
@@ -267,19 +262,6 @@ func RequireAnyPermission(permKeys ...string) fiber.Handler {
 			return c.Next()
 		}
 
-		// Mahasiswa is a default role, bypass specific permission checks for student actions
-		userRoles := strings.Split(strings.ToLower(role), ",")
-		for _, r := range userRoles {
-			r = strings.TrimSpace(r)
-			if r == "mahasiswa" {
-				for _, permKey := range permKeys {
-					if strings.HasPrefix(permKey, "student.") || permKey == "student_kencana_view" {
-						return c.Next()
-					}
-				}
-			}
-		}
-
 		permissions, ok := c.Locals("permissions").([]string)
 		if !ok || len(permissions) == 0 {
 			permissions = loadRolePermissions(c, role)
@@ -310,7 +292,7 @@ func HasPermission(role string, permissions []string, required string) bool {
 // IsSuperAdmin checks if a role string represents a super admin
 func IsSuperAdmin(role string) bool {
 	r := strings.TrimSpace(strings.ToLower(role))
-	return r == "super_admin" || r == "superadmin" || r == "super admin"
+	return r == "super_admin" || r == "superadmin"
 }
 
 // HasAnyRole checks if the provided role is in the list of allowed roles.

@@ -16,6 +16,7 @@ func SetupKencanaRoutes(app *fiber.App) {
 	student.Get("/mentor-invitations", kencana.GetMentorInvitations)
 	student.Post("/mentor-invitations/:id/respond", kencana.RespondMentorInvitation)
 	student.Post("/group-invitations/:id/respond", kencana.RespondGroupInvitation)
+	student.Get("/announcements", kencana.GetAnnouncements)
 	student.Get("/timeline", kencana.GetTimeline)
 	student.Get("/stages/:stageId", kencana.GetStage)
 	student.Get("/sessions/:sessionId", kencana.GetSession)
@@ -26,6 +27,7 @@ func SetupKencanaRoutes(app *fiber.App) {
 	student.Post("/quiz-attempts/:attemptId/submit", kencana.SubmitQuizAttempt)
 	student.Get("/assignments/:assignmentId", kencana.GetAssignment)
 	student.Post("/assignments/:assignmentId/submit", kencana.SubmitAssignment)
+	student.Post("/upload", kencana.UploadMedia)
 	student.Get("/handbook", kencana.GetHandbook)
 	student.Post("/handbook/draft", kencana.SaveHandbookDraft)
 	student.Post("/handbook/submit", kencana.SubmitHandbook)
@@ -37,14 +39,17 @@ func SetupKencanaRoutes(app *fiber.App) {
 	student.Get("/remedial", kencana.GetRemedial)
 	student.Get("/certificate", kencana.GetCertificate)
 
-	admin := api.Group("/kencana-admin", middleware.KencanaAdminCheck)
+	admin := api.Group("/kencana-admin", middleware.RequireAnyPermission("kencana.university.view", "kencana.faculty_stages.view", "kencana.timeline.view", "kencana.dashboard.view"))
 	admin.Get("/faculties", controllers.GetAllFakultas)
 	admin.Get("/majors", controllers.GetAllProgramStudi)
 	// Dashboard Stats
 	admin.Get("/dashboard/stats", middleware.RequirePermission("kencana.timeline.view"), kencana.GetDashboardStats)
+	// Faculty Compliance Monitoring
+	admin.Get("/monitoring/faculty-compliance", middleware.RequirePermission("kencana.timeline.view"), kencana.GetFacultyComplianceMonitoring)
 	// Periods
 	admin.Get("/periods", middleware.RequirePermission("kencana.timeline.view"), kencana.ListPeriods)
 	admin.Post("/periods", middleware.RequirePermission("kencana.timeline.create"), kencana.CreatePeriod)
+	admin.Put("/periods/:id", middleware.RequirePermission("kencana.timeline.update"), kencana.UpdatePeriod)
 
 	admin.Get("/periods/:id/phases", middleware.RequirePermission("kencana.timeline.view"), kencana.GetPeriodPhases)
 	admin.Put("/periods/:id/timeline/:phaseType", middleware.RequirePermission("kencana.timeline.update"), kencana.UpdateTimelinePhase)
@@ -129,11 +134,12 @@ func SetupKencanaRoutes(app *fiber.App) {
 	// Announcements
 	admin.Get("/announcements", middleware.RequirePermission("kencana.announcement.view"), kencana.ListAnnouncements)
 	admin.Post("/announcements", middleware.RequirePermission("kencana.announcement.create"), kencana.CreateAnnouncement)
+	admin.Put("/announcements/:id", middleware.RequirePermission("kencana.announcement.update"), kencana.UpdateAnnouncement)
 	admin.Delete("/announcements/:id", middleware.RequirePermission("kencana.announcement.delete"), kencana.DeleteAnnouncement)
 	// Dev: Reset all Kencana data
 	admin.Post("/reset-data", kencana.ResetKencanaData)
 
-	fakultas := api.Group("/kencana-fakultas", middleware.KencanaFakultasCheck)
+	fakultas := api.Group("/kencana-fakultas", middleware.RequirePermission("kencana.faculty_stages.view"))
 	fakultas.Get("/dashboard/stats", kencana.GetDashboardStats)
 	fakultas.Get("/participants", kencana.ListParticipants)
 	fakultas.Get("/scores", kencana.ListScores)
@@ -176,20 +182,25 @@ func SetupKencanaRoutes(app *fiber.App) {
 	// Announcements
 	fakultas.Get("/announcements", kencana.ListAnnouncements)
 	fakultas.Post("/announcements", kencana.CreateAnnouncement)
+	fakultas.Put("/announcements/:id", kencana.UpdateAnnouncement)
 	fakultas.Delete("/announcements/:id", kencana.DeleteAnnouncement)
 
-	mentor := api.Group("/kencana-mentor", middleware.KencanaMentorCheck)
+	mentor := api.Group("/kencana-mentor", middleware.RequirePermission("kencana.mentor.dashboard"))
 	mentor.Get("/dashboard", kencana.MentorDashboard)
+	mentor.Get("/announcements", kencana.MentorGetAnnouncements)
 	mentor.Get("/profile", kencana.MentorProfile)
 	mentor.Put("/profile", kencana.UpdateMentorProfile)
 	mentor.Get("/available-students", kencana.MentorAvailableStudents)
 	mentor.Get("/students", kencana.MentorStudents)
+	mentor.Get("/bulk-scores", kencana.MentorBulkScores)
+	mentor.Post("/bulk-scores", kencana.MentorSubmitBulkScores)
 	mentor.Post("/invitations", kencana.MentorInviteStudents)
 	mentor.Delete("/assignments/:id", kencana.MentorRemoveAssignment)
 	mentor.Get("/students/:studentId/progress", kencana.MentorStudentProgress)
 	mentor.Get("/students/:studentId/score", kencana.MentorStudentScore)
 	mentor.Get("/students/:studentId/attendance", kencana.MentorStudentAttendance)
 	mentor.Get("/students/:studentId/handbook", kencana.MentorStudentHandbook)
+	mentor.Get("/students/:studentId/assignments", kencana.MentorGetStudentAssignments)
 	mentor.Post("/students/:studentId/notes", kencana.MentorCreateNote)
 	mentor.Post("/students/:studentId/score-items", kencana.MentorCreateScoreItem)
 	mentor.Put("/students/:studentId/score-items", kencana.MentorUpsertBulkScoreItems)
@@ -202,5 +213,7 @@ func SetupKencanaRoutes(app *fiber.App) {
 	mentor.Get("/sessions", kencana.MentorListSessions)
 	mentor.Get("/sessions/:sessionId/attendance", kencana.MentorGetSessionAttendance)
 	mentor.Post("/sessions/:sessionId/attendance", kencana.MentorSubmitSessionAttendance)
+	mentor.Get("/absence-requests", kencana.MentorListAbsenceRequests)
+	mentor.Post("/absence-requests/:id/respond", kencana.MentorRespondAbsenceRequest)
 	mentor.Get("/sessions/:sessionId/qr-token", kencana.MentorGetSessionQR)
 }

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { PageContent, PageHeader, PageCard, PageCardHeader } from '@/components/ui/page';
-import { DialogModal } from '@/components/ui/DialogModal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/Dialog';
 import { DataTable } from '@/components/ui/DataTable';
 import { PrimaryStatsCard } from '@/components/ui/StatsCard';
 import { useForm } from 'react-hook-form';
@@ -108,7 +108,7 @@ const achievementSchema = z.object({
 export default function AchievementPage() {
   const user = useAuthStore(state => state.user);
   const { hasPermission } = usePermission();
-  const canManageAchievement = hasPermission('achievement.create') || hasPermission('achievement.update') || hasPermission('achievement.delete') || hasPermission('achievement.manage');
+  const canManageAchievement = hasPermission('achievement.create') || hasPermission('achievement.update') || hasPermission('achievement.delete') || hasPermission('achievement.manage') || hasPermission('student.achievement.create') || hasPermission('student.achievement.update') || hasPermission('student.achievement.delete');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState(null); // Data For Detail Modal
@@ -210,7 +210,13 @@ export default function AchievementPage() {
        if (arr.length > 0) payload.append('anggota_mahasiswa', JSON.stringify(arr));
     }
     if (formData.pembimbing_dosen) {
-       const arr = formData.pembimbing_dosen.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
+       const arr = formData.pembimbing_dosen.split(',').map(s => s.trim()).filter(s => s !== '').map(s => {
+         const num = Number(s);
+         if (!isNaN(num) && s.length < 8) {
+           return { dosen_id: num };
+         }
+         return { nidn: s, nama_dosen: '-' };
+       });
        if (arr.length > 0) payload.append('pembimbing_dosen', JSON.stringify(arr));
     }
 
@@ -334,11 +340,11 @@ export default function AchievementPage() {
         subtitle="Lapor, pantau status verifikasi, dan kelola seluruh prestasi akademik/non-akademikmu."
         icon="emoji_events"
         breadcrumbs={[
-          { label: 'Dashboard', path: '/app/student/dashboard' },
-          { label: 'Achievement', path: '/app/student/achievement' }
+          { label: 'Dashboard', path: '/student/dashboard' },
+          { label: 'Achievement', path: '/student/achievement' }
         ]}
         action={
-          user?.role !== 'super_admin' && canManageAchievement && (
+          canManageAchievement && (
             <button
               onClick={() => setIsModalOpen(true)}
               className="bg-[var(--theme-primary)] text-white px-4 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:opacity-90 transition-colors shadow-sm shadow-[var(--theme-primary)]/20 w-full sm:w-auto"
@@ -397,7 +403,7 @@ export default function AchievementPage() {
           const status = row.status || row.Status || 'Menunggu';
           const id = row.id || row.ID;
           return (
-            status === 'Menunggu' && user?.role !== 'super_admin' && canManageAchievement ? (
+            status === 'Menunggu' && canManageAchievement ? (
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete(id); }}
                 className="p-1.5 text-[#dc2626] bg-[#fef2f2] rounded hover:bg-[#fee2e2] transition-colors"
@@ -428,26 +434,57 @@ export default function AchievementPage() {
       />
 
       {/* MODAL LAPOR PRESTASI */}
-      <DialogModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Lapor Prestasi / Rekognisi / Dana"
-        subtitle="Isi data prestasi, rekognisi, atau rencana pendanaan lomba luar kampus dengan lengkap."
-        maxWidth="max-w-2xl"
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col max-h-[85vh]">
-          <div className="p-5 sm:p-8 overflow-y-auto space-y-5 text-left bg-white">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-[var(--theme-text-muted)]">Tipe Pengajuan <span className="text-[var(--theme-error)]">*</span></label>
-              <select {...register('tipe')} className="w-full border border-border rounded-xl px-4 py-2 focus:border-[var(--theme-primary)] outline-none text-on-surface bg-[var(--theme-bg)] h-[40px] text-xs font-semibold">
-                <option value="">Pilih Tipe Pengajuan</option>
-                <option value="Prestasi Mandiri">Prestasi Mandiri</option>
-                <option value="Sertifikasi">Sertifikasi</option>
-                <option value="Rekognisi">Rekognisi</option>
-                <option value="Pengajuan Dana">Pengajuan Dana Lomba</option>
-              </select>
-              {errors.tipe && <p className="text-xs text-[var(--theme-error)] mt-1">{errors.tipe.message}</p>}
+      <Dialog open={isModalOpen} onOpenChange={(open) => !open && setIsModalOpen(false)} maxWidth="max-w-2xl">
+        <DialogContent className="p-0 overflow-hidden glass-card rounded-3xl border-0 shadow-2xl">
+          <DialogHeader className="p-8 pb-6 border-b border-[var(--theme-border-muted)] bg-[var(--theme-bg)]/50 relative">
+            <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+              <span className="material-symbols-outlined text-8xl text-[var(--theme-primary)]">emoji_events</span>
             </div>
+            <div className="text-left relative z-10 flex gap-4 items-start">
+              <div className="w-14 h-14 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-2xl flex items-center justify-center shrink-0 border border-[var(--theme-primary)]/20 shadow-inner">
+                 <span className="material-symbols-outlined" style={{ fontSize: 28 }}>military_tech</span>
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-[var(--theme-primary)] uppercase tracking-widest mb-1">Form Pengajuan</p>
+                <DialogTitle className="text-xl md:text-2xl font-black mt-1 text-[var(--theme-text)] leading-tight tracking-tight">
+                  Lapor Prestasi / Rekognisi / Dana
+                </DialogTitle>
+                <DialogDescription className="text-xs font-bold text-[var(--theme-text-muted)] mt-2">
+                  Isi data prestasi, rekognisi, atau rencana pendanaan lomba luar kampus dengan lengkap.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col max-h-[85vh]">
+            <div className="p-5 sm:p-8 overflow-y-auto space-y-5 text-left bg-white">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-[var(--theme-text-muted)]">Tipe Pengajuan <span className="text-[var(--theme-error)]">*</span></label>
+                  <select {...register('tipe')} className="w-full border border-border rounded-xl px-4 py-2 focus:border-[var(--theme-primary)] outline-none text-on-surface bg-[var(--theme-bg)] h-[40px] text-xs font-semibold">
+                    <option value="">Pilih Tipe Pengajuan</option>
+                    <option value="Prestasi Mandiri">Prestasi Mandiri</option>
+                    <option value="Sertifikasi">Sertifikasi</option>
+                    <option value="Rekognisi">Rekognisi</option>
+                    <option value="Pengajuan Dana">Pengajuan Dana Lomba</option>
+                  </select>
+                  {errors.tipe && <p className="text-xs text-[var(--theme-error)] mt-1">{errors.tipe.message}</p>}
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-[var(--theme-text-muted)]">Terkait Organisasi (Opsional)</label>
+                  <select {...register('riwayat_organisasi_id')} className="w-full border border-border rounded-xl px-4 py-2 focus:border-[var(--theme-primary)] outline-none text-on-surface bg-[var(--theme-bg)] h-[40px] text-xs font-semibold">
+                    <option value="">-- Tidak Terkait Organisasi --</option>
+                    {orgList.filter(o => o.StatusVerifikasi === 'Terverifikasi' || o.StatusVerifikasi === 'Diverifikasi' || o.StatusVerifikasi === 'Aktif').map(org => (
+                      <option key={org.id || org.ID} value={org.id || org.ID}>
+                        {org.NamaOrganisasi} ({org.Tipe})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-[var(--theme-text-subtle)] mt-1">Pilih jika prestasi ini mewakili UKM/Ormawa Anda.</p>
+                </div>
+              </div>
 
             {tipeValue && (
               <>
@@ -608,8 +645,8 @@ export default function AchievementPage() {
                         <p className="text-[10px] text-[var(--theme-text-muted)] mt-1">Isi jika prestasi ini diraih secara berkelompok.</p>
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-xs font-semibold mb-1 text-[var(--theme-text-muted)]">ID Dosen Pembimbing (Pisahkan dengan koma)</label>
-                        <input {...register('pembimbing_dosen')} className="w-full border border-border rounded-xl px-3 py-1.5 focus:border-[var(--theme-primary)] outline-none text-sm" placeholder="Cth: 5, 8" />
+                        <label className="block text-xs font-semibold mb-1 text-[var(--theme-text-muted)]">ID / NIDN Dosen Pembimbing (Pisahkan dengan koma)</label>
+                        <input {...register('pembimbing_dosen')} className="w-full border border-border rounded-xl px-3 py-1.5 focus:border-[var(--theme-primary)] outline-none text-sm" placeholder="Cth: 5, 0012345678" />
                       </div>
                    </div>
                 </div>
@@ -637,23 +674,38 @@ export default function AchievementPage() {
             )}
           </div>
 
-          <div className="p-5 sm:p-6 border-t border-[var(--theme-border-muted)] bg-[var(--theme-bg)] shrink-0 flex gap-3">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-xl border border-[var(--theme-border)] text-[var(--theme-text-muted)] text-xs font-black hover:bg-[var(--theme-bg)] transition-colors cursor-pointer bg-[var(--theme-surface)] uppercase tracking-wider">Batal</button>
-            <button type="submit" disabled={createMutation.isLoading} className="flex-1 py-3 rounded-xl bg-[var(--theme-primary)] text-white text-xs font-black hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider border-none shadow-md shadow-[var(--theme-primary)]/20">
-              {createMutation.isLoading ? 'Menyimpan...' : (tipeValue === 'Pengajuan Dana' ? 'Kirim Pengajuan' : 'Simpan Laporan')}
-            </button>
-          </div>
-        </form>
-      </DialogModal>
+            <div className="p-5 sm:p-6 border-t border-[var(--theme-border-muted)] bg-[var(--theme-bg)] shrink-0 flex gap-3">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-xl border border-[var(--theme-border)] text-[var(--theme-text-muted)] text-xs font-black hover:bg-[var(--theme-bg)] transition-colors cursor-pointer bg-[var(--theme-surface)] uppercase tracking-wider">Batal</button>
+              <button type="submit" disabled={createMutation.isLoading} className="flex-1 py-3 rounded-xl bg-[var(--theme-primary)] text-white text-xs font-black hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider border-none shadow-md shadow-[var(--theme-primary)]/20">
+                {createMutation.isLoading ? 'Menyimpan...' : (tipeValue === 'Pengajuan Dana' ? 'Kirim Pengajuan' : 'Simpan Laporan')}
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* MODAL DETAIL */}
-      <DialogModal
-        open={!!selectedDetail}
-        onClose={() => setSelectedDetail(null)}
-        title={selectedDetail && (selectedDetail.tipe || selectedDetail.Tipe || 'Laporan Prestasi') === 'Pengajuan Dana' ? 'Detail Pengajuan Dana Lomba' : 'Detail Prestasi'}
-        subtitle="Informasi lengkap dan status verifikasi pengajuan atau pelaporan prestasi."
-        maxWidth="max-w-xl"
-      >
+      <Dialog open={!!selectedDetail} onOpenChange={() => setSelectedDetail(null)} maxWidth="max-w-xl">
+        <DialogContent className="p-0 overflow-hidden glass-card rounded-3xl border-0 shadow-2xl">
+          <DialogHeader className="p-8 pb-6 border-b border-[var(--theme-border-muted)] bg-[var(--theme-bg)]/50 relative">
+            <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+              <span className="material-symbols-outlined text-8xl text-[var(--theme-primary)]">task</span>
+            </div>
+            <div className="text-left relative z-10 flex gap-4 items-start">
+              <div className="w-14 h-14 bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] rounded-2xl flex items-center justify-center shrink-0 border border-[var(--theme-primary)]/20 shadow-inner">
+                 <span className="material-symbols-outlined" style={{ fontSize: 28 }}>fact_check</span>
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-[var(--theme-primary)] uppercase tracking-widest mb-1">Detail Informasi</p>
+                <DialogTitle className="text-xl md:text-2xl font-black mt-1 text-[var(--theme-text)] leading-tight tracking-tight">
+                  {selectedDetail && (selectedDetail.tipe || selectedDetail.Tipe || 'Laporan Prestasi') === 'Pengajuan Dana' ? 'Detail Pengajuan Dana Lomba' : 'Detail Prestasi'}
+                </DialogTitle>
+                <DialogDescription className="text-xs font-bold text-[var(--theme-text-muted)] mt-2">
+                  Informasi lengkap dan status verifikasi pengajuan atau pelaporan prestasi.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
         {selectedDetail && (
           <div className="flex flex-col max-h-[85vh]">
             <div className="p-5 sm:p-8 overflow-y-auto space-y-5 text-left bg-white">
@@ -725,7 +777,8 @@ export default function AchievementPage() {
             </div>
           </div>
         )}
-      </DialogModal>
+        </DialogContent>
+      </Dialog>
 
     </PageContent>
   );

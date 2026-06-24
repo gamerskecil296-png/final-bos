@@ -6,10 +6,15 @@ import { ErrorPanel, fmtDate, KencanaShell, LoadingPanel, ProgressBar, StatusBad
 export default function KencanaStagePage() {
   const { stageId } = useParams();
   const { data, isLoading, isError } = useKencanaStageQuery(stageId);
-  if (isLoading) return <KencanaShell title="Detail Tahap" breadcrumbs={[{ label: 'Dashboard', to: '/app/student/kencana' }, { label: 'Detail Tahap' }]}><LoadingPanel /></KencanaShell>;
-  if (isError) return <KencanaShell title="Detail Tahap" breadcrumbs={[{ label: 'Dashboard', to: '/app/student/kencana' }, { label: 'Detail Tahap' }]}><ErrorPanel message="Tahap tidak ditemukan atau belum dibuka." /></KencanaShell>;
+
+  if (stageId === '0' || stageId === 0) {
+    return <KencanaShell title="Detail Tahap" breadcrumbs={[{ label: 'Dashboard', to: '/student/kencana' }, { label: 'Detail Tahap' }]}><ErrorPanel message="Tahap tidak ditemukan atau belum dibuka." /></KencanaShell>;
+  }
+
+  if (isLoading) return <KencanaShell title="Detail Tahap" breadcrumbs={[{ label: 'Dashboard', to: '/student/kencana' }, { label: 'Detail Tahap' }]}><LoadingPanel /></KencanaShell>;
+  if (isError) return <KencanaShell title="Detail Tahap" breadcrumbs={[{ label: 'Dashboard', to: '/student/kencana' }, { label: 'Detail Tahap' }]}><ErrorPanel message="Tahap tidak ditemukan atau belum dibuka." /></KencanaShell>;
   return (
-    <KencanaShell title={data?.name || 'Detail Tahap'} subtitle={data?.description} breadcrumbs={[{ label: 'Dashboard', to: '/app/student/kencana' }, { label: data?.name || 'Detail Tahap' }]}>
+    <KencanaShell title={data?.name || 'Detail Tahap'} subtitle={data?.description} breadcrumbs={[{ label: 'Dashboard', to: '/student/kencana' }, { label: data?.name || 'Detail Tahap' }]}>
       <section className="grid gap-4 md:grid-cols-4">
         <Info label="Status" value={<StatusBadge status={data?.status} />} />
         <Info label="Tanggal Mulai" value={fmtDate(data?.start_date)} />
@@ -38,7 +43,7 @@ export default function KencanaStagePage() {
         <h2 className="text-xl font-bold font-headline text-slate-800">Daftar Sesi</h2>
         <div className="mt-5 grid gap-4">
           {(data?.sessions || []).map((session) => (
-            <Link key={session.id} to={`/app/student/kencana/session/${session.id}`} className="rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all hover:bg-white hover:border-[var(--theme-primary-light)] hover:shadow-sm">
+            <Link key={session.id} to={`/student/kencana/session/${session.id}`} className="rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all hover:bg-white hover:border-[var(--theme-primary-light)] hover:shadow-sm">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-3"><h3 className="text-lg font-bold font-headline text-slate-800 leading-tight">{session.title}</h3><StatusBadge status={session.status} /></div>

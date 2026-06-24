@@ -150,7 +150,7 @@ export default function PresensiPage() {
 
           {/* FOOTER ACTIONS */}
           <div className="w-full pt-4 border-t border-[var(--theme-border-muted)] flex flex-col gap-3">
-            <NavLink to="/app/student/dashboard" className="w-full">
+            <NavLink to="/student/dashboard" className="w-full">
               <Button className="w-full h-12 rounded-2xl bg-[var(--theme-primary)] hover:opacity-90 text-white font-black text-xs tracking-wider uppercase shadow-lg">
                 Kembali ke Dashboard
               </Button>

@@ -41,7 +41,7 @@ func getUserID(c *fiber.Ctx) (uint, error) {
 			}
 			return 0, fiber.NewError(fiber.StatusNotFound, "Data mahasiswa tidak ditemukan berdasarkan ID yang diberikan")
 		}
-		return 0, fiber.NewError(fiber.StatusBadRequest, "X-Student-ID diperlukan untuk admin")
+		// Jika admin tidak mengirimkan X-Student-ID, lanjut ke bawah
 	}
 
 	v, ok := c.Locals("user_id").(uint)
@@ -68,6 +68,7 @@ func getStudent(c *fiber.Ctx) (*models.Mahasiswa, error) {
 			}
 			return nil, fiber.NewError(fiber.StatusNotFound, "Data mahasiswa tidak ditemukan berdasarkan ID yang diberikan")
 		}
+		// Admin needs to provide X-Student-ID
 		return nil, fiber.NewError(fiber.StatusBadRequest, "X-Student-ID diperlukan untuk admin")
 	}
 

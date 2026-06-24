@@ -266,11 +266,14 @@ func (KencanaHandbook) TableName() string { return "mahasiswa.kencana_handbooks"
 
 type KencanaAttendance struct {
 	BaseModel
-	SessionID uint       `gorm:"uniqueIndex:idx_kencana_attendance_session_student" json:"session_id"`
-	StudentID uint       `gorm:"uniqueIndex:idx_kencana_attendance_session_student;index" json:"student_id"`
-	Status    string     `gorm:"size:40;default:'absent';index" json:"status"`
-	CheckedAt *time.Time `json:"checked_at"`
-	CheckedBy *uint      `gorm:"index" json:"checked_by"`
+	SessionID     uint           `gorm:"uniqueIndex:idx_kencana_attendance_session_student" json:"session_id"`
+	Session       KencanaSession `gorm:"foreignKey:SessionID" json:"session,omitempty"`
+	StudentID     uint           `gorm:"uniqueIndex:idx_kencana_attendance_session_student;index" json:"student_id"`
+	Status        string         `gorm:"size:40;default:'absent';index" json:"status"`
+	Reason        string         `gorm:"type:text" json:"reason"`
+	AttachmentURL string         `gorm:"type:text" json:"attachment_url"`
+	CheckedAt     *time.Time     `json:"checked_at"`
+	CheckedBy     *uint          `gorm:"index" json:"checked_by"`
 }
 
 func (KencanaAttendance) TableName() string { return "mahasiswa.kencana_attendances" }

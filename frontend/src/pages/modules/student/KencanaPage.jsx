@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useKencanaDashboardQuery, useKencanaTimelineQuery, useBandingQuery, useAjukanBandingMutation } from '@/queries/useKencanaQuery';
+import { useKencanaDashboardQuery, useKencanaTimelineQuery, useBandingQuery, useAjukanBandingMutation, useStudentAnnouncementsQuery } from '@/queries/useKencanaQuery';
 import { ErrorPanel, KencanaShell, LoadingPanel, PrimaryButton, StatusBadge, fmtDate } from './Kencana/components';
 import useAuthStore from '@/store/useAuthStore';
+import { usePermission } from '@/hooks/usePermission';
 
 export default function KencanaPage() {
   const user = useAuthStore(state => state.user);
+  const { hasPermission } = usePermission();
   const { data: dashboardData, isLoading: isLoadingDashboard, isError: isErrorDashboard } = useKencanaDashboardQuery();
   const { data: timelineData, isLoading: isLoadingTimeline, isError: isErrorTimeline } = useKencanaTimelineQuery();
+  const { data: announcements } = useStudentAnnouncementsQuery();
 
   const { data: bandingHistory } = useBandingQuery();
   const submitBanding = useAjukanBandingMutation();
   const [isBandingModalOpen, setIsBandingModalOpen] = useState(false);
   const [bandingReason, setBandingReason] = useState('');
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
   const handleAjukanBanding = () => {
     if (!bandingReason.trim()) return;
@@ -101,7 +105,7 @@ export default function KencanaPage() {
         
         <div className="space-y-6">
           {/* Last Activity - Dipindah ke atas agar langsung terlihat mahasiswa */}
-          {user?.role !== 'super_admin' && dashboardData?.last_activity?.id && (
+          {!hasPermission('kencana.dashboard.view') && dashboardData?.last_activity?.id && (
             <div className="glass-card p-4 md:p-5 relative overflow-hidden bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
               <div className="absolute top-0 left-0 w-1 h-full bg-[var(--theme-primary)]"></div>
               <div className="flex items-center gap-2 mb-1.5">
@@ -110,7 +114,7 @@ export default function KencanaPage() {
               </div>
               <h4 className="text-base font-bold text-[var(--theme-text)] leading-tight font-headline">{dashboardData.last_activity.title}</h4>
               <div className="mt-3">
-                <PrimaryButton to={`/app/student/kencana/session/${dashboardData.last_activity.id}`} className="text-xs py-1.5 px-4 h-auto">
+                <PrimaryButton to={`/student/kencana/session/${dashboardData.last_activity.id}`} className="text-xs py-1.5 px-4 h-auto">
                   Buka Sesi Terakhir <span className="material-symbols-outlined text-xs ml-1">arrow_forward</span>
                 </PrimaryButton>
               </div>
@@ -174,13 +178,14 @@ export default function KencanaPage() {
 
             <div className="space-y-3">
               {sortedStages.map((stage, index) => {
-                const CardComponent = user?.role === 'super_admin' ? 'div' : Link;
-                const linkProps = user?.role === 'super_admin' ? {} : { to: stage.phase_type === 'pasca_kencana' ? '/app/student/kencana/score' : `/app/student/kencana/stage/${stage.id}` };
+                const isClickable = !hasPermission('kencana.dashboard.view') && stage.id && stage.status !== 'inactive' && stage.status !== 'not_open';
+                const CardComponent = isClickable ? Link : 'div';
+                const linkProps = isClickable ? { to: stage.phase_type === 'pasca_kencana' ? '/student/kencana/score' : `/student/kencana/stage/${stage.id}` } : {};
                 return (
                   <CardComponent
-                    key={stage.id}
+                    key={stage.type || stage.id || index}
                     {...linkProps}
-                    className={`group flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 rounded-xl border transition-all ${stage.status === 'active' ? 'border-[var(--theme-primary)]/50 bg-blue-50/30 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                    className={`group flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 rounded-xl border transition-all ${stage.status === 'active' ? 'border-[var(--theme-primary)]/50 bg-blue-50/30 shadow-sm' : 'border-slate-200 bg-white'} ${isClickable ? 'hover:border-slate-300 cursor-pointer' : 'cursor-default'}`}
                   >
                     <div className="flex items-start gap-3">
                        <div className={`grid size-8 place-items-center rounded-lg ${stage.status === 'active' ? 'bg-[var(--theme-primary)] text-white shadow-sm' : 'bg-slate-100 text-slate-500'} text-sm font-bold font-headline shrink-0`}>
@@ -232,9 +237,18 @@ export default function KencanaPage() {
           </div>
 
           {/* Quick Actions Menus */}
-          {user?.role !== 'super_admin' && (
+          {!hasPermission('kencana.dashboard.view') && (
             <div className="grid gap-3 md:grid-cols-2">
-              <Link to="/app/student/kencana/attendance" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
+              <Link to="/student/kencana/handbook" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
+                <div className="grid size-9 place-items-center rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
+                  <span className="material-symbols-outlined text-base">book</span>
+                </div>
+                <div>
+                   <h4 className="font-bold text-slate-800 text-[13px] group-hover:text-emerald-600 transition-colors font-headline">Handbook Mahasiswa</h4>
+                   <p className="text-[10px] font-medium text-slate-500">Isi dan submit handbook Kencana</p>
+                </div>
+              </Link>
+              <Link to="/student/kencana/attendance" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
                 <div className="grid size-9 place-items-center rounded-lg bg-indigo-50 text-indigo-600 shrink-0">
                   <span className="material-symbols-outlined text-base">fact_check</span>
                 </div>
@@ -243,13 +257,22 @@ export default function KencanaPage() {
                    <p className="text-[10px] font-medium text-slate-500">Cek rekapitulasi presensi sesi</p>
                 </div>
               </Link>
-              <Link to="/app/student/kencana/score" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
+              <Link to="/student/kencana/score" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
                 <div className="grid size-9 place-items-center rounded-lg bg-orange-50 text-orange-600 shrink-0">
                   <span className="material-symbols-outlined text-base">workspace_premium</span>
                 </div>
                 <div>
-                   <h4 className="font-bold text-slate-800 text-[13px] group-hover:text-orange-600 transition-colors font-headline">Unduh Sertifikat</h4>
-                   <p className="text-[10px] font-medium text-slate-500">Akses nilai akhir dan e-Sertifikat</p>
+                   <h4 className="font-bold text-slate-800 text-[13px] group-hover:text-orange-600 transition-colors font-headline">Rekap Nilai & Sertifikat</h4>
+                   <p className="text-[10px] font-medium text-slate-500">Lihat detail nilai, item penilaian, dan e-Sertifikat</p>
+                </div>
+              </Link>
+              <Link to="/student/kencana/attendance" className="group glass-card p-3.5 transition hover:bg-slate-50/80 flex items-center gap-3">
+                <div className="grid size-9 place-items-center rounded-lg bg-amber-50 text-amber-600 shrink-0">
+                  <span className="material-symbols-outlined text-base">edit_note</span>
+                </div>
+                <div>
+                   <h4 className="font-bold text-slate-800 text-[13px] group-hover:text-amber-600 transition-colors font-headline">Ajukan Izin</h4>
+                   <p className="text-[10px] font-medium text-slate-500">Permohonan izin ketidakhadiran sesi</p>
                 </div>
               </Link>
             </div>
@@ -264,31 +287,29 @@ export default function KencanaPage() {
                <span className="material-symbols-outlined text-sm">info</span> Informasi Status
             </h3>
             
-            {/* Mentor Info */}
-            <div className="mb-4">
-               <p className="text-[11px] font-bold text-slate-500 mb-1.5">PEMBIMBING KENCANA (DP)</p>
-               {dashboardData?.mentor ? (
-                 <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3 flex items-center gap-3">
-                   <span className="material-symbols-outlined text-emerald-600">supervised_user_circle</span>
-                   <p className="text-sm font-bold text-emerald-800 leading-tight">{dashboardData.mentor.name}</p>
-                 </div>
-               ) : (
-                 <div className="rounded-xl bg-amber-50 border border-amber-100 p-3">
-                   <div className="flex items-center gap-2 text-amber-600 mb-1">
-                      <span className="material-symbols-outlined text-sm">warning</span>
-                      <p className="text-xs font-bold">Belum ada pembimbing</p>
-                   </div>
-                   <p className="text-[11px] text-amber-700/80 font-medium">Cek undangan di menu Undangan DP.</p>
-                   <Link to="/app/student/kencana/invitations" className="inline-block mt-2 text-[10px] font-bold bg-white text-amber-700 px-3 py-1.5 rounded border border-amber-200 hover:bg-amber-100 transition-colors">
-                     Cek Undangan
-                   </Link>
-                 </div>
-               )}
-            </div>
+            {/* Announcements (Top Priority) */}
+            {announcements && announcements.length > 0 && (
+               <div className="mb-4">
+                  <p className="text-[11px] font-bold text-[var(--theme-primary)] mb-1.5 tracking-wider uppercase">PENGUMUMAN KENCANA</p>
+                  <div className="space-y-2">
+                    {announcements.map((a, i) => (
+                      <div key={i} onClick={() => setSelectedAnnouncement(a)} className="bg-slate-50 rounded-lg p-3 border border-slate-200 cursor-pointer hover:border-[var(--theme-primary)]/40 hover:shadow-sm hover:bg-blue-50/20 transition-all">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="text-[12px] font-bold text-[var(--theme-primary)] leading-tight">{a.judul}</p>
+                          <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap ml-2">{new Date(a.created_at).toLocaleDateString('id-ID')}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-600 mt-1 line-clamp-3 prose prose-sm prose-p:my-0 prose-p:leading-snug" dangerouslySetInnerHTML={{ __html: a.isi }}></div>
+                      </div>
+                    ))}
+                  </div>
+               </div>
+            )}
 
-            {/* Blockers */}
+            {/* Blockers & Alerts (Second Priority) */}
             <div className="mb-4">
-               <p className="text-[11px] font-bold text-slate-500 mb-1.5">PENGHALANG KELULUSAN</p>
+               <p className={`text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider ${announcements && announcements.length > 0 ? 'border-t border-slate-100 pt-4' : ''}`}>
+                 PENGHALANG KELULUSAN
+               </p>
                {blockers.length === 0 ? (
                  <div className="text-[12px] font-bold text-emerald-600 flex items-center gap-1.5">
                    <span className="material-symbols-outlined text-[14px]">check_circle</span> Aman, tidak ada masalah.
@@ -302,22 +323,60 @@ export default function KencanaPage() {
                    ))}
                  </ul>
                )}
+
+               {/* Other System Notifications (e.g. Remedial) */}
+               {notifications.filter(n => n.title !== 'Syarat Kencana').map((n, i) => (
+                 <div key={i} className="mt-2 bg-amber-50 rounded-lg p-3 border border-amber-200">
+                   <p className="text-[12px] font-bold text-amber-800 flex items-center gap-1.5 leading-tight">
+                      <span className="material-symbols-outlined text-[14px]">warning</span> {n.title}
+                   </p>
+                   <p className="text-[11px] text-amber-700 mt-1 line-clamp-2">{n.message}</p>
+                 </div>
+               ))}
             </div>
 
-            {/* Notifications */}
-            {notifications.length > 0 && (
-               <div>
-                  <p className="text-[11px] font-bold text-slate-500 mb-1.5 border-t border-slate-100 pt-4">PENGUMUMAN BARU</p>
-                  <div className="space-y-2">
-                    {notifications.map((n, i) => (
-                      <div key={i} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                        <p className="text-[12px] font-bold text-slate-700 leading-tight">{n.title}</p>
-                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{n.message}</p>
-                      </div>
-                    ))}
-                  </div>
-               </div>
-            )}
+            {/* Mentor Info (Third Priority) */}
+            <div className="mb-4">
+               <p className="text-[11px] font-bold text-slate-500 mb-1.5 border-t border-slate-100 pt-4 uppercase tracking-wider">PEMBIMBING KENCANA UNIVERSITAS (DP)</p>
+               {dashboardData?.mentor ? (
+                 <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3 flex items-center gap-3">
+                   <span className="material-symbols-outlined text-emerald-600">supervised_user_circle</span>
+                   <p className="text-sm font-bold text-emerald-800 leading-tight">{dashboardData.mentor.name}</p>
+                 </div>
+               ) : dashboardData?.has_pending_invitation ? (
+                 <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3">
+                   <div className="flex items-center gap-2 text-indigo-600 mb-1">
+                      <span className="material-symbols-outlined text-sm">mail</span>
+                      <p className="text-xs font-bold">Ada Undangan DP!</p>
+                   </div>
+                   <p className="text-[11px] text-indigo-700/80 font-medium">Kamu memiliki undangan kelompok DP yang menunggu konfirmasi.</p>
+                   <Link to="/student/kencana/invitations" className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold bg-white text-indigo-600 px-3 py-1.5 rounded border border-indigo-200 hover:bg-indigo-100 transition-colors">
+                     Cek Undangan <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                   </Link>
+                 </div>
+               ) : (
+                 <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 flex items-center gap-2 text-slate-500">
+                   <span className="material-symbols-outlined text-sm">person_off</span>
+                   <p className="text-xs font-bold">Belum ada pembimbing universitas</p>
+                 </div>
+               )}
+            </div>
+
+            {/* Mentor Fakultas */}
+            <div className="mb-2">
+               <p className="text-[11px] font-bold text-slate-500 mb-1.5 border-t border-slate-100 pt-4 uppercase tracking-wider">PEMBIMBING KENCANA FAKULTAS</p>
+               {dashboardData?.mentor_fakultas ? (
+                 <div className="rounded-xl bg-cyan-50 border border-cyan-100 p-3 flex items-center gap-3">
+                   <span className="material-symbols-outlined text-cyan-600">supervised_user_circle</span>
+                   <p className="text-sm font-bold text-cyan-800 leading-tight">{dashboardData.mentor_fakultas.name}</p>
+                 </div>
+               ) : (
+                 <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 flex items-center gap-2 text-slate-500">
+                   <span className="material-symbols-outlined text-sm">person_off</span>
+                   <p className="text-xs font-bold">Belum ada pembimbing fakultas</p>
+                 </div>
+               )}
+            </div>
           </div>
 
           {/* Banding Widget (Minimalist) */}
@@ -390,6 +449,48 @@ export default function KencanaPage() {
                 }`}
               >
                 {submitBanding.isPending ? 'Mengirim...' : 'Kirim Banding'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Announcement Modal */}
+      {selectedAnnouncement && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[24px] p-6 w-full max-w-lg shadow-2xl relative animate-in zoom-in-95 duration-200 border border-slate-100 max-h-[85vh] flex flex-col">
+            <button
+              onClick={() => setSelectedAnnouncement(null)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 hover:bg-slate-100 text-slate-500 transition-colors shrink-0"
+            >
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
+
+            <div className="flex items-center gap-2 mb-4 shrink-0">
+               <div className="grid size-8 place-items-center rounded-lg bg-blue-50 text-[var(--theme-primary)]">
+                  <span className="material-symbols-outlined text-[16px]">campaign</span>
+               </div>
+               <div>
+                 <h3 className="text-[13px] font-bold text-[var(--theme-primary)] uppercase tracking-wider">Pengumuman</h3>
+                 <p className="text-[10px] text-slate-400 font-medium">Dari Administrator Kencana</p>
+               </div>
+            </div>
+
+            <div className="overflow-y-auto pr-2 pb-2 flex-1">
+               <h2 className="text-xl font-black text-slate-800 mb-2 leading-snug">{selectedAnnouncement.judul}</h2>
+               <p className="text-xs font-bold text-slate-500 mb-5 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                  {new Date(selectedAnnouncement.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+               </p>
+               <div 
+                  className="prose prose-sm max-w-none prose-slate prose-p:leading-relaxed prose-headings:font-bold break-words overflow-x-auto"
+                  dangerouslySetInnerHTML={{ __html: selectedAnnouncement.isi }}
+               />
+            </div>
+            
+            <div className="pt-4 border-t border-slate-100 flex justify-end shrink-0">
+              <button type="button" onClick={() => setSelectedAnnouncement(null)} className="px-5 py-2.5 rounded-xl text-[13px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+                Tutup Pengumuman
               </button>
             </div>
           </div>

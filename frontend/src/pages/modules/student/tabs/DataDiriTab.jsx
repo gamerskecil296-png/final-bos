@@ -5,8 +5,6 @@ import * as z from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axios';
 import { toast } from 'react-hot-toast';
-import { usePermission } from '@/hooks/usePermission';
-import { P } from '@/config/permissions';
 
 import { cn } from '@/lib/utils';
 import {
@@ -114,8 +112,6 @@ export default function DataDiriTab({ profile }) {
   const queryClient = useQueryClient();
   const [confirmDataOpen, setConfirmDataOpen] = useState(false);
   const [pendingData, setPendingData] = useState(null);
-  const { hasPermission } = usePermission();
-  const canUpdate = hasPermission(P.STUDENT_PROFILE_UPDATE);
 
   // Helper untuk parse date
   const parseDate = (dateStr) => {
@@ -294,13 +290,16 @@ export default function DataDiriTab({ profile }) {
           const flatErrors = Object.keys(errs).reduce((acc, k) => ({ ...acc, [k]: errs[k].message }), {});
           console.error('Validation errors:', JSON.stringify(flatErrors, null, 2));
 
-          const errorMessages = Object.values(errs).map(e => e.message);
-          if (errorMessages.length > 0) {
-            if (errorMessages.length <= 2) {
-              toast.error(`Gagal menyimpan:\n• ${errorMessages.join('\n• ')}`);
-            } else {
-              toast.error(`Gagal menyimpan:\n• ${errorMessages.slice(0, 2).join('\n• ')}\n• ...dan ${errorMessages.length - 2} error lainnya`);
-            }
+          const errorCount = Object.keys(errs).length;
+          if (errorCount > 0) {
+            toast.error(
+              <div className="flex flex-col gap-1">
+                <span className="font-bold text-sm">Gagal Menyimpan</span>
+                <span className="text-xs opacity-90">
+                  Terdapat {errorCount} kolom yang harus dilengkapi/diperbaiki. Silakan periksa kembali form Anda.
+                </span>
+              </div>
+            );
           } else {
             toast.error('Mohon lengkapi seluruh field yang wajib diisi');
           }
@@ -308,7 +307,6 @@ export default function DataDiriTab({ profile }) {
       )}
       className="space-y-8 p-5 lg:p-5"
     >
-      <fieldset disabled={!canUpdate} className="space-y-8">
       {/* SEKSI: DATA PRIBADI */}
       <div className="border-b border-[var(--theme-border-muted)] pb-6">
         <h2 className="text-sm font-black font-headline uppercase tracking-widest mb-1" style={{ color: 'var(--theme-h2)' }}>Data Pribadi</h2>
@@ -641,27 +639,24 @@ export default function DataDiriTab({ profile }) {
       </div>
 
       {/* AKSI */}
-      {canUpdate && (
-        <div className="flex flex-col gap-3 border-t px-6 py-5 sm:flex-row sm:justify-end" style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-bg)' }}>
-          <button
-            type="button"
-            onClick={() => reset()}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] px-7 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] transition-all hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)] active:scale-95 cursor-pointer"
-          >
-            <RotateCcw size={16} />
-            Reset
-          </button>
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--theme-primary)] px-7 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-[var(--theme-primary)]/20 transition-all hover:bg-[var(--theme-primary-hover)] active:scale-95 disabled:cursor-wait disabled:opacity-70 border-none cursor-pointer"
-          >
-            {mutation.isPending ? <span className="material-symbols-outlined animate-spin text-base shrink-0">sync</span> : <span className="material-symbols-outlined text-base shrink-0">save</span>}
-            Simpan Profil
-          </button>
-        </div>
-      )}
-      </fieldset>
+      <div className="flex flex-col gap-3 border-t px-6 py-5 sm:flex-row sm:justify-end" style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-bg)' }}>
+        <button
+          type="button"
+          onClick={() => reset()}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] px-7 py-3 text-[10px] font-black uppercase tracking-widest text-[var(--theme-text-muted)] transition-all hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)] active:scale-95 cursor-pointer"
+        >
+          <RotateCcw size={16} />
+          Reset
+        </button>
+        <button
+          type="submit"
+          disabled={mutation.isPending}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--theme-primary)] px-7 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-[var(--theme-primary)]/20 transition-all hover:bg-[var(--theme-primary-hover)] active:scale-95 disabled:cursor-wait disabled:opacity-70 border-none cursor-pointer"
+        >
+          {mutation.isPending ? <span className="material-symbols-outlined animate-spin text-base shrink-0">sync</span> : <span className="material-symbols-outlined text-base shrink-0">save</span>}
+          Simpan Profil
+        </button>
+      </div>
     </form>
   );
 }
